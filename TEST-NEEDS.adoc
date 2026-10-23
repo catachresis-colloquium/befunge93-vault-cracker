@@ -1,47 +1,39 @@
-== TEST-NEEDS.md — CRG Grade B Test Suite
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= TEST-NEEDS: ProvenTests & Benchmark Coverage Matrix
+:toc:
 
-This document records the six independently runnable test targets
-required for CRG Grade B compliance.
+== Overview
 
-=== Grade B Requirements
+Testing and benchmarking in `befunge93-vault-cracker` align with `hyperpolymath/proven-tests-and-benches` and `hyperpolymath/standards/3-practice/testing-and-benchmarking/TESTING-TAXONOMY.adoc` (18 `TestCategory` axes x 14 `TestAspect` dimensions, Rule R10 runtime-constructed negative fixtures, and >=1,000 generative cases per property).
 
-CRG Grade B requires *6 independently runnable test targets*, each
-producing a clear pass/fail result via a Justfile recipe.
+Run the entire system and game-bit suite concurrently via:
 
-=== Test Targets
+[source,bash]
+----
+just check
+----
 
-[width="100%",cols="19%,18%,34%,29%",options="header",]
+== Independently Runnable System & Game Targets
+
+[cols="1,2,3",options="header"]
 |===
-|Target |Recipe |Implementation |Description
-|T1 |`+just test-zig+` |`+zig test ffi/zig/test/integration_test.zig+`
-|FFI integration test
+| Target | Justfile Recipe | Scope
 
-|T2 |`+just test-structure+` |`+bash tests/validate_structure.sh+`
-|Required files/directories present
-
-|T3 |`+just test-nickel+`
-|`+nickel typecheck contractiles/self-validating/template-yard.k9.ncl+`
-|K9 contractile type-checks
-
-|T4 |`+just test-lint+` |`+bash tests/validate_sources.sh+` |All .res
-files have SPDX headers
-
-|T5 |`+just test-examples+` |`+bash tests/validate_examples.sh+`
-|examples/ directory has content
-
-|T6 |`+just test-ffi+` |`+bash tests/validate_ffi.sh+` |ffi/zig/
-structure complete
+| S1 | `just check-structure` | Repository layout, governance files, absence of retired `.res`/`6a2`/`.a2ml`
+| S2 | `just check-sources` | Zero banned extensions, Vue SFC blocks, SPDX headers, Idris2 `%default total`
+| S3 | `just check-examples` | RFC 8785 JCS validation on `examples/`
+| S4 | `just check-jcs` | RFC 8785 JCS `package.json` & synchronized `bun.lock` + `deno.lock` + `pnpm-lock.yaml`
+| S5 | `just check-deeds` | DEED v1.2.0 formal grammar & UUIDv5/v8 validation across all 4 `.deed` files
+| S6 | `just check-k9` | `coordination.k9` v1.2.0 + K9 v1.0.0 contract validation across 7 `.k9.ncl` files
+| S7 | `just check-launcher` | `provision-check.sh` 9-artefact provisioning & v0.6.0 launcher standard audit
+| S8 | `just check-ffi` | Native Zig C-ABI compilation, unit tests, and header integration tests (`12/12`)
+| S9 | `just check-abi` | Idris2 ABI & `ProvenTests` module totality check
+| G1 | `just check-game-vm` | 2D torus Befunge-93 VM opcodes, wraparound, stringmode, `g`/`p`, bounded halt
+| G2 | `just check-game-tea` | Pure TEA reducer lifecycle, passcode prefix oracle, and R-01..R-04 regressions
+| G3 | `just check-game-ui` | Vue 3 SFC DOM mount (`happy-dom`), ARIA roles, keyboard torus nav, 18-step solve
+| G4 | `just check-game-properties` | 4,200+ deterministic generative property cases (`>= 1,000` per property)
+| G5 | `just check-game-contracts` | Cross-layer coupling, live `must.k9.ncl` probes, R10 runtime wrongness pairs, taxonomy audit
+| G6 | `just check-game-server` | Live Bun HTTP server smoke, CSP security headers, `security.txt`, and `launcher.sh` E2E lifecycle
+| G7 | `just check-marid-seam` | Option-2 Marid companion wire contract (Stage A unary/RFC 9457, Stage B SSE, `bun:ffi` Zig oracle & Vue panel)
+| B1 | `just bench` | Bun JS/Vue p95 latency benchmark gate (`benches/baseline.json`) + Zig native bench
 |===
-
-=== Running All Tests
-
-....
-just test
-....
-
-=== Notes
-
-* T1 and T3 skip gracefully if `+zig+` / `+nickel+` are not installed.
-* All bash scripts use the PASS/FAIL counter pattern and exit non-zero
-on failure.
-* Scripts are executable (`+chmod +x+`).

@@ -1,88 +1,19 @@
 <!--
 SPDX-License-Identifier: CC-BY-SA-4.0
-Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 -->
-## Machine-Readable Artefacts
+# CLAUDE.md — AI Assistant Instructions for `befunge93-vault-cracker`
 
-The following files in `.machine_readable/` contain structured project metadata:
+## Authority Spine (Read First)
 
-- `STATE.scm` - Current project state and progress
-- `META.scm` - Architecture decisions and development practices
-- `ECOSYSTEM.scm` - Position in the ecosystem and related projects
-- `AGENTIC.scm` - AI agent interaction patterns
-- `NEUROSYM.scm` - Neurosymbolic integration config
-- `PLAYBOOK.scm` - Operational runbook
+1. `befunge93-vault-cracker_chora.deed` — Canonical DEED v1.2.0 repository deed (`(anchor)`, `(state)`, `(intent)`, `(ecosystem)`, `(agentic)`, `(neurosym)`, `(playbook)`).
+2. `coordination.k9` — AI and maintainer coordination invariants (`k9-coordination` v1.2.0).
+3. `.machine_readable/0-AI-MANIFEST.deed` — Agent session entry rules.
+4. `.machine_readable/contractiles/<verb>/<verb>.k9.ncl` — K9 v1.0.0 contractile trident (`intend`, `must`, `trust`, `adjust`, `dust`, `bust`).
 
----
+## Stack & Invariants
 
-# CLAUDE.md - AI Assistant Instructions
-
-## Language Policy (Hyperpolymath Standard)
-
-### ALLOWED Languages & Tools
-
-| Language/Tool | Use Case | Notes |
-|---------------|----------|-------|
-| **AffineScript** | Primary application code | Affine-typed, compiles to typed-wasm or ESM |
-| **Bun** | JS runtime & package management (tier 1) | Default for all new work. Runs compiled ESM/JS directly — no bundler step. Uses an npm-compatible `package.json` plus `bun.lock` — both are expected, not anti-patterns. |
-| **Rust** | Performance-critical, systems, WASM | Preferred for CLI tools |
-| **Tauri 2.0+** | Mobile apps (iOS/Android) | Rust backend + web UI |
-| **Dioxus** | Mobile apps (native UI) | Pure Rust, React-like |
-| **Gleam** | Backend services | Runs on BEAM or compiles to JS |
-| **Bash/POSIX Shell** | Scripts, automation | Keep minimal |
-| **JavaScript** | Only where AffineScript cannot | MCP protocol glue, Bun APIs |
-| **Nickel** | Configuration language | For complex configs |
-| **Guile Scheme** | State/meta files | STATE.scm, META.scm, ECOSYSTEM.scm |
-| **Julia** | Batch scripts, data processing | Per RSR |
-| **OCaml** | AffineScript compiler | Language-specific |
-| **Ada** | Safety-critical systems | Where required |
-
-### BANNED - Do Not Use
-
-| Banned | Replacement |
-|--------|-------------|
-| TypeScript | AffineScript |
-| ReScript | AffineScript |
-| Deno | Bun |
-| Node.js | Bun |
-| npm | Bun |
-| pnpm/yarn | Bun |
-| Go | Rust |
-| Python | Julia/Rust/AffineScript |
-| Java/Kotlin | Rust/Tauri/Dioxus |
-| Swift | Tauri/Dioxus |
-| React Native | Tauri/Dioxus |
-| Flutter/Dart | Tauri/Dioxus |
-
-### Mobile Development
-
-**No exceptions for Kotlin/Swift** - use Rust-first approach:
-
-1. **Tauri 2.0+** - Web UI (AffineScript) + Rust backend, MIT/Apache-2.0
-2. **Dioxus** - Pure Rust native UI, MIT/Apache-2.0
-
-Both are FOSS with independent governance (no Big Tech).
-
-### Enforcement Rules
-
-1. **No new TypeScript files** - Convert existing TS to AffineScript
-2. **Use `package.json` + `bun.lock` for JS runtime deps** - Bun is npm-compatible; a manifest is REQUIRED
-3. **`bun install --production` for production deps** - resolved from `package.json`, pinned via `bun.lock`
-4. **No Go code** - Use Rust instead
-5. **No Python anywhere** - Use Julia for data/batch, Rust for systems, AffineScript for apps
-6. **No Kotlin/Swift for mobile** - Use Tauri 2.0+ or Dioxus
-
-### Package Management
-
-- **Primary**: Guix (guix.scm)
-- **Fallback**: Guix (flake.guix)
-- **JS deps**: Bun (`package.json` + `bun.lock`). Declare tooling as a devDependency and run `bunx --no-install --bun <tool>` — a bare `bunx <tool>` can fetch an unpinned package and may start Node via its shebang.
-
-### Security Requirements
-
-- No MD5/SHA1 for security (use SHA256+)
-- HTTPS only (no HTTP URLs)
-- No hardcoded secrets
-- SHA-pinned dependencies
-- SPDX license headers on all files
-
+- **UI & Runtime**: Vue 3 Single-File Components (`src/App.vue`, `src/components/*.vue`) + pure ESM JavaScript (`src/engine/*.js`, `src/composables/*.js`, `src/marid/*.js`) running on **Bun** (`server.js`, `scripts/build.js`).
+- **Manifest & Lockfiles**: `package.json` MUST remain RFC 8785 JCS canonical (`just fmt` / `just fmt-check`) with synchronized `bun.lock`, `deno.lock`, and `pnpm-lock.yaml`. Never introduce `package-lock.json`, `yarn.lock`, `.ts`, `.tsx`, `.res`, or `.a2ml` files.
+- **Formal ABI & Native FFI**: `src/abi/*.idr` (`%default total` Idris2) + `ffi/zig/` (Zig C-ABI `libbefunge93_vault_cracker` loaded via `bun:ffi` in `src/marid/native-oracle.js`).
+- **Verification**: Always run `just check` (executes all 16 system & game-bit targets concurrently in parallel) and `./launcher.sh --doctor` before concluding changes.

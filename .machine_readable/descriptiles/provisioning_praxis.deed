@@ -1,0 +1,29 @@
+;; SPDX-License-Identifier: MPL-2.0
+;; SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+;;
+;; Provisioning descriptor for befunge93-vault-cracker.
+;; Canon: hyperpolymath/standards 3-practice/provisioning/PROVISIONING-STANDARD.adoc (v1.0.0).
+
+(praxis-deed
+  :schema-version "1.0.0"
+  :canonical-name "befunge93-vault-cracker-provisioning"
+  :beholding-chora #u5"estate/chora"
+  :id #u8"provisioning:catachresis-colloquium/befunge93-vault-cracker"
+  :name "befunge93-vault-cracker"
+  :repo "catachresis-colloquium/befunge93-vault-cracker"
+  :version "0.2.0"
+  :archetype "app"
+  :languages "bun zig"
+  :build "bun run scripts/build.js"
+  :test "bun test"
+  :bench "bun run benches/befunge93.bench.js"
+  :lint "bash tests/validate_sources.sh"
+  :fmt "bun scripts/jcs-canon.js --write package.json"
+  :fmt-check "bun scripts/jcs-canon.js --check package.json"
+  :run "bun run server.js"
+  :deps "bun install --frozen-lockfile"
+  :config "bunfig.toml package.json mise.toml"
+  :ports "8000"
+  :system-deps "git bash"
+  :ai-say-it ""
+  :opsm-note "")

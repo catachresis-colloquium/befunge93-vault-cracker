@@ -1,51 +1,30 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+// Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 = Befunge-93 Vault Cracker Roadmap
 :toc:
 
-== Current Status
+== Current Status (`v0.2.0`)
 
-**v1.0.0** - Core parody UI complete and functional.
+* [x] Deterministic 10x10 2D torus Befunge-93 virtual machine (`src/engine/befunge93.js`)
+* [x] Pure functional TEA game reducer & boot invariant self-checks (`src/engine/game-state.js`)
+* [x] Accessible Vue 3 SFC UI + Bun HTTP server (`src/components/*.vue`, `server.js`)
+* [x] DEED v1.2.0, `coordination.k9` v1.2.0, K9 v1.0.0 contractiles, and v0.6.0 `launcher.sh`
+* [x] Idris2 `%default total` ABI + native Zig C-ABI vault oracle (`src/abi/`, `ffi/zig/`)
+* [x] Option-2 `metadatastician/marid` companion wire seam (Stage A unary/RFC 9457 + Stage B SSE)
 
-== Completed
+== Next Milestones
 
-=== v1.0.0 - Initial Release
+=== `v0.3.0` — Live `marid` Upstream Trial
 
-* [x] Core vault cracker UI with TEA pattern
-* [x] Six satirical security layers
-* [x] Animated "attack" with tech babble
-* [x] Befunge-93 decorative grid
-* [x] Telemetry and About panels
-* [x] CSS-first styling (inline, no dependencies)
-* [x] ErrorBoundary for fault tolerance
-* [x] Self-check assertions (no smart quotes, etc.)
+* [ ] Run Stage A unary + RFC 9457 conformance trial against live Julia `MaridHTTPJSONExt.serve_json` (`MARID_UPSTREAM_URL=http://127.0.0.1:6274`)
+* [ ] Run Stage B W3C SSE replay/resync trial once `marid`'s `/events` stream seam lands
 
-== Future Directions
+=== `v0.4.0` — Custom Playfield Challenges
 
-=== v1.1.0 - Enhanced Visuals
-
-* [ ] Add ASCII art Befunge-93 logo
-* [ ] Animate the Befunge grid during attacks
-* [ ] Add sound effects (optional, muted by default)
-* [ ] More satirical log messages
-
-=== v1.2.0 - Interactive Features
-
-* [ ] Allow users to input custom "vault configurations"
-* [ ] Export attack logs as shareable images
-* [ ] Keyboard shortcuts for controls
-
-=== v2.0.0 - Befunge Interpreter
-
-* [ ] Actually parse and execute Befunge-93 code (for educational purposes)
-* [ ] Visualize execution on the 2D grid
-* [ ] Step-through debugger
+* [ ] User-editable 10x10 Befunge-93 vault grids with bounded step-budget verification
+* [ ] Shareable deterministic seed challenges
 
 == Non-Goals
 
-Things we explicitly will NOT do:
-
-* Make this a real security tool
-* Add actual cryptographic functionality
-* Support mobile apps (web-only)
-* Add analytics or tracking
+* Real cryptographic or offensive security tooling
+* Client-side telemetry/analytics tracking without explicit companion opt-in

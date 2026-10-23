@@ -1,0 +1,1 @@
+{"dependencies":{"vue":"3.5.22"},"description":"Canonical Bun + Vue 3 manifest example (RFC 8785 JCS)","license":"MPL-2.0","name":"example-bun-vue-app","private":true,"scripts":{"build":"bun run scripts/build.js","serve":"bun run server.js","test":"bun test"},"type":"module","version":"0.2.0"}

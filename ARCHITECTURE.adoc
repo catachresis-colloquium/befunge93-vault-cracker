@@ -1,48 +1,23 @@
-== Architecture
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= Architecture: Befunge-93 Vault Cracker
+:toc:
 
-=== Overview
+== System Layers
 
-This repository follows a modular, maintainable architecture designed
-for clarity, scalability, and long-term sustainability.
-
-=== Directory Structure
-
-....
-.
-├── src/           # Source code
-├── tests/        # Test suites
-├── docs/         # Documentation
-├── scripts/      # Utility scripts
-├── config/       # Configuration files
-├── LICENSE       # License file
-├── LICENSES/     # Full license texts
-└── README.adoc   # Project documentation
-....
-
-=== Design Principles
-
-* *Separation of Concerns*: Each module has a single responsibility
-* *Testability*: Code is written to be easily testable
-* *Documentation*: All public APIs are documented
-* *Configuration*: Environment-specific settings are externalized
-
-=== Dependencies
-
-* External dependencies are minimized and clearly declared
-* Version pinning is used for reproducibility
-
-=== Security Considerations
-
-* Sensitive data is never committed to the repository
-* Secrets are managed through environment variables or secure vaults
-* Regular dependency audits are performed
-
-=== Maintainability
-
-* Code follows consistent style guidelines
-* Pull requests require review and CI checks
-* Issues and discussions are tracked transparently
-
-'''''
-
-_Last updated: 2026-07-18_
+. *Pure Puzzle Core (`src/engine/`)*
+** `befunge93.js`: Deterministic 2D torus Befunge-93 virtual machine (`GRID`, `WALK_TRACE`, `stepVm`, `executeProgram`).
+** `game-state.js`: Side-effect-free TEA (`Model -> Message -> Model`) reducer, boot self-checks, opcode cell inspector, and prefix-scoring passcode validator.
+. *Vue 3 Reactive UI (`src/composables/`, `src/components/`, `src/App.vue`)*
+** `useVaultGame.js` binds the pure TEA reducer to Vue 3 `shallowRef` state and manages timer lifecycles without idle polling.
+** Modular SFCs (`PlayfieldGrid.vue`, `ExecutionControls.vue`, `PasscodeVault.vue`, `TracePanel.vue`, `AboutPanel.vue`, `TelemetryPanel.vue`) compiled via `vue/compiler-sfc` in `scripts/vue-sfc-plugin.js`.
+. *Optional Marid Companion Seam (`src/marid/`, `src/composables/useVaultTelemetry.js`, `contracts/marid-vault-trial.json`)*
+** Progressive-enhancement adapter matching `@metadatastician/marid-client` (Stage A unary I-JSON + RFC 9457 `application/problem+json`, Stage B W3C SSE `/events?topic=vault.runs&last_event_id=<seq>` with `marid.sync.resync_required`).
+** Built-in Bun trial backend when standalone; fail-closed reverse proxy (`MARID_UPSTREAM_URL`) when paired with a live Julia `Marid` server (`docs/MARID-TRIAL-CONTRACT.adoc`).
+. *Bun HTTP Runtime & Compliant Launcher (`server.js`, `launcher.sh`)*
+** `server.js` serves `dist/` on `0.0.0.0:8000` with `/health` JSON telemetry and `Content-Security-Policy` headers.
+** `launcher.sh` implements `launcher-standard_praxis.deed` v0.6.0 with XDG `0700` state isolation.
+. *Formal ABI & Native FFI (`src/abi/`, `ffi/zig/`)*
+** Idris2 `%default total` modules specify `Fin 10` torus bounds, C-ABI layout preconditions, and `ProvenTests` taxonomy coverage.
+** Zig C-ABI library (`libbefunge93_vault_cracker`) mirrors the 10x10 vault torus natively (`~1.9 us/op`).
+. *Governance & Verification (`befunge93-vault-cracker_chora.deed`, `coordination.k9`, `Justfile`)*
+** Validated DEED v1.2.0 S-expressions, `coordination.k9` v1.2.0, K9 v1.0.0 contractiles, RFC 8785 JCS `package.json` across Bun/Deno/pnpm, and parallel `just check`.

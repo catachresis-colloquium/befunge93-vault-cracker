@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= `.machine_readable/svc/` — Service components for befunge93-vault-cracker
-:toc:
+= Self-Validating Components (`.machine_readable/svc/k9/`)
 
-Service-layer components that sit alongside the contractile trident
-but are not themselves verbs. Per **ADR-001 (2026-04-18)**, K9 lives
-here rather than under `contractiles/` so the contractile directory
-stays a pure six-verb set (intend, trust, must, bust, adjust, dust).
+This directory holds K9 Contract Specification v1.0.0 self-validating service
+components for `befunge93-vault-cracker`:
 
-== Contents
+* `vault-cracker-svc.k9.ncl` — Instantiated Yard-level service configuration
+  validated by `scripts/k9/tools/k9-validate.sh`.
+* `template-kennel.k9.ncl.in`, `template-yard.k9.ncl.in`, `template-hunt.k9.ncl.in` —
+  Parameterized K9 security-leash reference templates (`.in` suffix marks
+  uninstantiated templates per `MIGRATION-1058.adoc`).
 
-* `k9/` — K9 self-validating templates and validators.
+Validate all K9 components with:
 
-== Pointer
-
-For the verb contractiles themselves, see
-`.machine_readable/contractiles/`.
+[source,bash]
+----
+just check-k9
+----
