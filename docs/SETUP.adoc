@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= Setup Guide: Befunge-93 Vault Cracker
+:toc:
+:toclevels: 2
+
+== Quick Start
+
+[source,bash]
+----
+./launcher.sh --setup
+./launcher.sh --doctor
+./launcher.sh --start
+----
+
+Then open `http://127.0.0.1:8000` in your browser, or run `just serve` in the foreground.
+
+== Toolchain
+
+`mise.toml` + `mise.lock` provision the pinned developer toolchain:
+
+* *Bun* (`1.2.21+` / `1.4.2` in `mise.lock`) — Tier-1 JavaScript runtime, Vue 3 SFC bundler, `bun:ffi` Zig bridge, HTTP server, and test runner.
+* *Deno* (`2.7+` / `2.9.6`) & *pnpm* (`10.28+`) — Secondary JS lockfile & runtime verification per `LANGUAGE-POLICY.adoc` §1.4.
+* *Zig* (`0.15.2+` / `0.16.0` in `mise.lock`) — Compiles and tests the native C-ABI Befunge-93 vault FFI (`ffi/zig/` -> `_build/ffi/`).
+* *just* (`>= 1.42.0`) — Parallel task runner (`just check`, `just serve`, `just bench`).
+* *shellcheck* & *trivy* — Shell script linting and supply-chain vulnerability auditing.
+* *Idris2* (via `pack`) — Optional formal verification of `src/abi/*.idr`.
+
+== Guix Development Shell
+
+[source,bash]
+----
+guix time-machine -C channels.scm -- shell -m manifest.scm
+mise install
+bun install --frozen-lockfile
+just check
+----
+
+== Launcher Modes (`launcher-standard_praxis.deed` v0.6.0)
+
+* `./launcher.sh --start` / `--stop` / `--status` / `--auto` / `--browser`
+* `./launcher.sh --integ` / `--disinteg` (XDG `.desktop` entry)
+* `./launcher.sh --setup` / `--doctor` / `--heal` / `--ai-setup`

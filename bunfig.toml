@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MPL-2.0
+# Bun runtime & test configuration for befunge93-vault-cracker
+
+preload = ["./scripts/vue-sfc-plugin.js"]
+
+[test]
+preload = ["./scripts/vue-sfc-plugin.js"]

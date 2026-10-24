@@ -1,0 +1,170 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Reusable Staff Briefing Template — Disciplined AI Engineering Hygiene Audit
+= AI-Assisted Engineering Hygiene Report: {repo-name}
+:repo-name: <repository-slug>
+:repo-version: <semver>
+:audit-date: <YYYY-MM-DD>
+:baseline-ref: <git-sha-or-tag>
+:scanner-suite: hyperpolymath/pons-asinorum (Tier 0/1/2 AST + Repo Hygiene) + ProvenTests
+:runtimes-verified: Bun / Deno / Node (pnpm)
+:toc: left
+:toclevels: 3
+:sectnums:
+:icons: font
+
+[abstract]
+--
+A recurring concern among senior engineering staff is that AI coding assistants accelerate feature velocity at the expense of structural coherence — leaving behind dead abstractions, duplicated state, cargo-culted scaffolding, and unverified claims. This briefing template documents an empirical counter-pattern: **contract-gated, saturation-first AI remediation**. Every repository using this protocol establishes a high-assertion test and benchmark baseline *before* touching production code, executes cleanup in atomic single-concern stages, and re-runs the full verification and benchmark matrix after **every** stage.
+--
+
+== Executive Summary
+
+[cols="3,2,2,2,3", options="header"]
+|===
+| Metric | S0 (Saturated Baseline) | Final Stage | Net Delta | Engineering Interpretation
+
+| Static & Architectural Smells (`pons-asinorum`)
+| `<S0-findings>`
+| `0`
+| `-<S0-findings> (-100%)`
+| Zero dead stores, contradictions, dead props, or unwired FFI shims
+
+| Zero-Caller Module Exports
+| `<S0-dead-exports>`
+| `0`
+| `-<S0-dead-exports> (-100%)`
+| Every exported symbol has at least one verified production or test consumer
+
+| Executable Source LoC (`src/`, `scripts/`, `ffi/`)
+| `<S0-code-loc>`
+| `<Sn-code-loc>`
+| `<delta-code-loc> (<pct>%)`
+| Smaller attack and maintenance surface with strictly higher runtime integration
+
+| Total Non-Lockfile Repository LoC
+| `<S0-repo-loc>`
+| `<Sn-repo-loc>`
+| `<delta-repo-loc> (<pct>%)`
+| Uninstantiated templates, stale audits, and contradictory docs removed
+
+| Minified Client Bundle Size (`dist/app.js`)
+| `<S0-bundle-bytes> B`
+| `<Sn-bundle-bytes> B`
+| `<delta-bundle-bytes> B`
+| Dead reactive wrappers, unused props, and duplicate literals pruned
+
+| Automated Test & Property Assertions
+| `<S0-tests>` tests / `<S0-expects>` assertions
+| `<Sn-tests>` tests / `<Sn-expects>` assertions
+| `100% green` across `{runtimes-verified}`
+| Zero behavioural regressions across any runtime or contract gate
+|===
+
+== Why Naive AI Workflows Create Mess — and What Changes Here
+
+Unconstrained code generation optimizes locally for *"does the prompt appear satisfied?"* rather than globally for *"is every line load-bearing?"*. Left unchecked across multiple iterations, three failure modes dominate:
+
+1. **Additive Accretion Without Subtraction** — New layers (UI migrations, FFI scaffolds, wire protocols) are added beside dead predecessors instead of replacing them cleanly.
+2. **Dual Sources of Truth** — Hardcoded lookup tables or duplicate bundlers are pasted to make an animation or dev server work quickly while leaving the real interpreter or build script disconnected.
+3. **Unfalsifiable Claims** — Cleanup or optimization PRs cite line deletions without proving behavioural equivalence or honest latency distributions (`p50`/`p95`).
+
+=== The Four-Rule Discipline Applied in This Audit
+
+[cols="1,3,3", options="header"]
+|===
+| Rule | Operational Constraint | Failure Mode Prevented
+
+| **1. Saturate Before Touching Code (`S0`)**
+| Expand unit, DOM, E2E, contract, and `>= 1,000`-case property suites + deterministic microbenchmarks on *unmodified* code first.
+| Prevents silent regressions and exposes latent bugs hidden by shallow happy-path tests.
+
+| **2. Atomic Remediation Stages (`S1..Sn`)**
+| Group fixes by structural layer (docs/templates -> reactive UI/wire -> engine/bundler -> native FFI). Never mix unrelated refactors.
+| Makes every LoC, bundle-byte, and latency shift attributable to a single causal change.
+
+| **3. Retest & Rebench Every Stage**
+| Run all parallel contract gates, all target JS runtimes, and all native/JS benchmarks at the end of *each* stage.
+| Catches cross-layer interactions (e.g., parallel build races, binary grep probes) immediately.
+
+| **4. Mechanistic Benchmark Honesty**
+| Report `ops/s`, `p50`, and `p95` across all stages; explain step-function speedups mechanistically (`pons-asinorum` `implausible-speedup-claim` guard) and report flat curves honestly.
+| Eliminates cherry-picked numbers and builds credibility with staff engineers.
+|===
+
+== Step-by-Step Progression Ledger
+
+_Populate verbatim from the automated stage harness (`step_ledger.jsonl`). Do not hand-edit benchmark figures._
+
+[cols="2,1,1,1,1,1,1,2", options="header"]
+|===
+| Stage | Tracked Files | Non-Lock LoC | Code LoC | Bundle (B) | Smells | Dead Exports | Gate Status
+
+| `S0-saturated-baseline`
+| `<files>` | `<loc>` | `<code-loc>` | `<bytes>` | `<smells>` | `<exports>` | PASS
+
+| `S1-<stage-slug>`
+| `<files>` | `<loc>` | `<code-loc>` | `<bytes>` | `<smells>` | `<exports>` | PASS
+
+| `S2-<stage-slug>`
+| `<files>` | `<loc>` | `<code-loc>` | `<bytes>` | `<smells>` | `<exports>` | PASS
+
+| `S3-<stage-slug>`
+| `<files>` | `<loc>` | `<code-loc>` | `<bytes>` | `<smells>` | `<exports>` | PASS
+
+| `S4-<stage-slug>`
+| `<files>` | `<loc>` | `<code-loc>` | `<bytes>` | `0` | `0` | PASS
+|===
+
+== Benchmark Trajectory Across Stages
+
+_Record `ops/s` and median/tail latency (`p50` / `p95` in microseconds or nanoseconds) at every stage._
+
+[cols="3,2,2,2,2,2,3", options="header"]
+|===
+| Workload | `S0` | `S1` | `S2` | `S3` | `S4` | Mechanistic Notes
+
+| `<workload-1>`
+| `<ops / p50>` | `<ops / p50>` | `<ops / p50>` | `<ops / p50>` | `<ops / p50>` | `<why flat or improved>`
+|===
+
+== Catalogue of Remediated Findings
+
+Group every finding by `pons-asinorum` tier so reviewers can distinguish objective AST bugs from architectural debt:
+
+* **Tier 0 (Tree-sitter Syntactic Rules)** — Unconditional syntax anti-patterns (`string-concat-in-loop`, `empty-catch-block`, `self-comparison`, `duplicate-branch-body`). Document explicit counter-conditions when a syntactic match is an intentional streaming buffer.
+* **Tier 1 (Dataflow & Lifetimes)** — Dead stores, unread struct fields across functions, frozen reactive `computed(() => scalar)` wrappers, and stream double-consumption (`Response.json()` followed by `Response.text()`).
+* **Tier 2 (Semantic & Doc Contradictions)** — Stale architecture diagrams, wrong licenses or language stacks in citations, proof comments asserting the wrong theorem, and unrendered template residue.
+* **Architectural Cohesion** — Disconnected interpreters/FFI libraries, duplicate bundlers, and dead component props/exports.
+
+== Defects Uncovered Exclusively by Pre-Cleanup Saturation (`S0`)
+
+_List real production bugs caught while writing the `S0` saturation tests before cleanup began. Showing that test saturation catches real edge-case bugs reinforces why `S0` precedes refactoring._
+
+* **`<Finding-ID>` (`<file>:<line>`)** — _Symptom, root cause, failing edge-case input, and verified fix._
+
+== Verification Gate Matrix
+
+[cols="2,3,2", options="header"]
+|===
+| Gate Category | Command / Runner | Status
+
+| Multi-Runtime Test Parity
+| `just test-runtimes` (`{runtimes-verified}`)
+| PASS
+
+| Parallel Contract & Build Suite
+| `just check`
+| PASS
+
+| Benchmark Suite (JS + Native)
+| `just bench`
+| PASS
+|===
+
+== Adopting This Protocol in Another Repository
+
+1. **Run `pons-asinorum` Tier 0/1/2 + dead-export inventory** to enumerate every candidate smell with file:line citations and explicit false-positive counter-conditions.
+2. **Author `S0` saturation tests and benchmarks** until every opcode, state transition, wire error path, and invariant has deterministic assertions, then freeze `S0` in an append-only JSONL ledger.
+3. **Execute 3–5 single-layer stages**, running the automated measurement script at the end of every stage and refusing to weaken any `must` contractile probe to make a stage pass.
+4. **Publish the instantiated report** alongside the code diff so reviewers can audit every claim in under five minutes.

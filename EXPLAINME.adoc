@@ -1,102 +1,57 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 = Befunge-93 Vault Cracker — EXPLAINME
 :toc: preamble
 :icons: font
 
-This file maps README.adoc claims to their implementation evidence for
-sceptical developers.
+This document maps every architectural and functional claim in link:README.adoc[`README.adoc`] to concrete, verifiable files and tests in the repository.
 
-== "A satirical UI that demonstrates esoteric programming absurdity vs. overengineered security theater"
-
-[quote, README.adoc]
-____
-Befunge-93 Vault Cracker is a parody application that simulates an imaginary
-"attack" on an overengineered cryptographic vault using the power of Befunge-93.
-____
+== Claim 1: "Real 2D Torus Befunge-93 VM (JS + Native Zig C-ABI)"
 
 How this is implemented::
-The single source file link:src/Bf93-vault-cracker.res[`src/Bf93-vault-cracker.res`]
-is a React component written in JavaScript (with a `.res` extension as a parody
-of AffineScript). It implements The Elm Architecture (TEA) pattern: a `Model`,
-`update` function, and `View`. The vault stack is a static array of six
-fictional security layers (Ed448, SHAKE3-256, BLAKE3, Kyber-1024, Argon2id,
-MFA). Each "crack" step removes one layer from the array and appends an absurd
-log message to the attack console. No cryptography is implemented or executed.
+* link:src/engine/befunge93.js[`src/engine/befunge93.js`] implements `parseGrid`, `createVmState`, `stepVm`, `executeProgram`, and `deriveWalkTrace` across the 10x10 vault torus (`GRID`).
+* Row 0 (`0"7401"v  `) pushes sentinel `0` and ASCII `'7','4','0','1'`; Row 1 (`v"9826"< \`) reverses leftward to push `'6','2','8','9'`; Rows 2–4 drain the stack via `:`, `_`, `,`, and `$` before descending the east shaft `(4,9)..(9,9)` to halt on `@` and emit `98261047` (`EXPECTED_PASSCODE`) with an empty stack.
+* `WALK_TRACE` is derived directly at module initialization by stepping `createVmState(GRID)` through `stepVm` — never from a hand-typed trace array.
+* link:ffi/zig/src/main.zig[`ffi/zig/src/main.zig`] implements the full 26-opcode native Zig C-ABI VM (`befunge93_vault_cracker_eval_grid` + `befunge93_vault_cracker_run_vault`) loaded live via `bun:ffi` in link:src/marid/native-oracle.js[`src/marid/native-oracle.js`] and differential-fuzzed across `1,000` random 10x10 grids in `tests/property/befunge93-properties.test.js`.
 
 Caveat::
-The `.res` extension is deliberately misleading parody — the file is plain
-JavaScript/JSX, not AffineScript. The Befunge-93 grid displayed is ASCII art with
-no interpreter behind it.
+No real cryptographic primitives (Ed448, SHAKE3-256, BLAKE3, Kyber-1024, Argon2id) are attacked; the "vault stack" remains satirical puzzle framing around genuine 2D Befunge-93 execution.
 
-== "A TEA (The Elm Architecture) demonstration in JavaScript/React"
-
-[quote, README.adoc]
-____
-A CSS-first, dependency-free single-file component.
-____
+== Claim 2: "Vue 3 Single-File Components on Bun + Pure TEA Game Reducer"
 
 How this is implemented::
-The component loads React via CDN (`<script src="https://unpkg.com/react/...">`)
-with no npm, no `node_modules`, no build step. The TEA model is: `model` holds
-`{ vault, log, telemetry }`, `update(msg, model)` returns a new model, and
-`view(model)` renders JSX. The `serve` Justfile recipe starts a Deno static
-file server — the only runtime dependency.
+* link:src/engine/game-state.js[`src/engine/game-state.js`] implements the pure functional TEA model (`createInitialModel`, `update`, `runSelfChecks`, `evaluatePasscodeCandidate`, `inspectGridCell`).
+* link:src/composables/useVaultGame.js[`src/composables/useVaultGame.js`] wraps the pure TEA reducer in Vue 3 `shallowRef` reactivity and manages playback timers strictly while `running && !completed` (zero idle polling timers).
+* link:src/App.vue[`src/App.vue`] and link:src/components/[`src/components/*.vue`] (`PlayfieldGrid.vue`, `ExecutionControls.vue`, `PasscodeVault.vue`, `TracePanel.vue`, `AboutPanel.vue`, `TelemetryPanel.vue`) are genuine Vue 3 SFCs with WAI-ARIA `grid > row > gridcell` roving focus, compiled via link:scripts/vue-sfc-plugin.js[`scripts/vue-sfc-plugin.js`] and bundled by link:scripts/build.js[`scripts/build.js`].
+* link:server.js[`server.js`] serves prebuilt `dist/app.js` (with `mtimeMs` freshness verification against `src/`), `/.well-known/security.txt`, `/health`, and strict security headers on `0.0.0.0:8000`.
 
-Caveat::
-Using React via CDN is not the preferred hyperpolymath approach (AffineScript is
-standard) — this is intentional parody of overengineered setups. A production
-hyperpolymath app would use AffineScript compiled output.
-
-== "Built for screenshots and laughs, not actual security research"
-
-[quote, README.adoc]
-____
-Fake metrics (Entropy, Latency, Vibes)
-____
+== Claim 3: "Option-2 Marid Companion Seam & Dual-Oracle Verification"
 
 How this is implemented::
-The `telemetry` model fields are incremented with `Math.random()` multipliers
-on each crack step. "Entropy" increases, "Latency" wobbles, "Vibes" are
-tracked as a metric. The values have no external meaning.
+* link:src/marid/marid-wire-client.js[`src/marid/marid-wire-client.js`] and link:src/marid/local-trial-backend.js[`src/marid/local-trial-backend.js`] implement Stage A unary HTTP/JSON + RFC 9457 `application/problem+json` and Stage B W3C SSE (`/events?topic=vault.runs&last_event_id=<seq>`) with `marid.sync.resync_required` gap recovery, plus fail-closed `MARID_UPSTREAM_URL` reverse proxying.
+* `POST /api/vault/runs` cross-verifies submitted passcodes against both the JS VM (`executeProgram`) and the compiled Zig C-ABI shared library (`probeNativeVaultOracle`).
 
-Caveat::
-None. The metrics are exactly as meaningful as advertised.
+== Claim 4: "DEED v1.2.0, K9 v1.0.0, and Idris2 + Zig ABI/FFI"
 
-== Dogfooded Across The Account
+How this is implemented::
+* link:befunge93-vault-cracker_chora.deed[`befunge93-vault-cracker_chora.deed`] is the root S-expression repository deed validated by `bun scripts/deed_lint.js`.
+* link:coordination.k9[`coordination.k9`] declares AI/maintainer invariants under `k9-coordination` v1.2.0 (`bun scripts/validate-coordination-k9.js`).
+* `.machine_readable/contractiles/<verb>/<verb>.k9.ncl` and `.machine_readable/svc/k9/vault-cracker-svc.k9.ncl` conform to K9 Contract Specification v1.0.0 (`scripts/k9/tools/k9-validate.sh`), and every `must.k9.ncl` probe executes live in `tests/contracts/canonical-wrongness-r10.test.js`.
+* link:src/abi/[`src/abi/{Types,Layout,Foreign,VaultProofs}.idr`] defines `%default total` `Fin 10` torus types, round-trip coordinate proofs, and `ProvenTests` obligations matching `ffi/zig/include/befunge93_vault_cracker.h`.
 
-[cols="1,2,2", options="header"]
+== File Map
+
+[cols="2,3",options="header"]
 |===
-| Technology / Pattern | Used here | Also used in
+| Path | Responsibility
 
-| TEA (Elm Architecture) pattern
-| State management for the vault animation
-| link:https://github.com/hyperpolymath/gossamer[gossamer] (window management),
-  link:https://github.com/hyperpolymath/panll[panll] (panel state)
-
-| Deno static server
-| `just serve` development server
-| link:https://github.com/hyperpolymath/k9-showcase[k9-showcase],
-  link:https://github.com/hyperpolymath/a2ml-showcase[a2ml-showcase]
-
-| Justfile recipes
-| `serve`, `check`
-| Every hyperpolymath repo
-
-| SPDX licence headers
-| `// SPDX-License-Identifier: CC-BY-SA-4.0`
-| All hyperpolymath source files
+| `src/engine/befunge93.js` | Deterministic 2D torus Befunge-93 VM & live-derived `WALK_TRACE`
+| `src/engine/game-state.js` | Pure TEA game state machine, self-checks, and passcode oracle
+| `src/composables/useVaultGame.js`, `useVaultTelemetry.js` | Vue 3 composables for TEA playback timers & Marid SSE/unary client
+| `src/App.vue`, `src/components/*.vue` | Six accessible Vue 3 Single-File Components (`vault`, `trace`, `about`, `telemetry`)
+| `src/marid/*.js` | Marid wire client, local/upstream trial router, and `bun:ffi` Zig C-ABI oracle bridge
+| `scripts/vue-sfc-plugin.js`, `scripts/build.js` | Native Bun `.vue` SFC loader & unified client bundler
+| `server.js`, `launcher.sh` | Hardened Bun HTTP server & `launcher-standard_praxis.deed` v0.6.0 launcher
+| `src/abi/*.idr`, `ffi/zig/*` | Total Idris2 ABI proofs & Zig C-ABI FFI library/tests/benchmarks
+| `tests/**`, `benches/*` | 40+ tests (277k+ assertions across 7 suites in Bun/Deno/pnpm) & JS/Zig benchmarks
 |===
-
-== Known Gaps
-
-[CAUTION]
-====
-The source file uses a `.res` extension but is plain JavaScript/JSX — the
-README documents this as intentional parody, but it will confuse AffineScript
-tooling that scans for `.res` files.
-====
-
-No other known gaps. The project delivers exactly what it promises: screenshots
-and laughs.

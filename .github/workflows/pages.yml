@@ -1,52 +1,53 @@
 # SPDX-License-Identifier: MPL-2.0
-name: GitHub Pages (Ddraig SSG)
+name: GitHub Pages (Playable Vue 3 + Bun Bundle)
+
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
 concurrency:
   group: "pages"
   cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    container:
-      image: ghcr.io/stefan-hoeck/idris2-pack@sha256:f0758996a931fb35d9ecb1de273c4d59dabe2a09b433afc7e357f65a08b7e1ff
+    timeout-minutes: 10
     steps:
-      - name: Checkout Site
+      - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Checkout Ddraig SSG
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          repository: hyperpolymath/ddraig-ssg
-          path: .ddraig-ssg
-      - name: Compile Ddraig
-        working-directory: .ddraig-ssg
-        run: idris2 Ddraig.idr -o ddraig
-      - name: Build site
+          bun-version: "1.4.2"
+
+      - name: Build static Vue 3 puzzle bundle
         run: |
-          mkdir -p src
-          if [ ! -f src/index.md ] && [ -f README.md ]; then
-            cp README.md src/index.md
-          elif [ ! -f src/index.md ]; then
-            echo "# ${GITHUB_REPOSITORY}" > src/index.md
-          fi
-          ./.ddraig-ssg/build/exec/ddraig build src _site https://hyperpolymath.github.io/${GITHUB_REPOSITORY#*/}
-      - name: Upload artifact
+          bun install --frozen-lockfile
+          bun run build
+          touch dist/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: '_site'
+          path: 'dist'
+
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     needs: build
     steps:
       - name: Deploy to GitHub Pages

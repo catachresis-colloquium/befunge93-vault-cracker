@@ -1,40 +1,32 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= Befunge-93 Vault Cracker - Citation Guide
+// Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Befunge-93 Vault Cracker — Citation Guide
 :toc:
 
 == BibTeX
 
 [source,bibtex]
 ----
-@software{befunge93_vault_cracker_2025,
-  author = {Polymath, Hyper},
+@software{befunge93_vault_cracker_2026,
+  author = {Jewell, Jonathan D.A.},
   title = {Befunge-93 Vault Cracker},
-  subtitle = {A satirical UI demonstrating esoteric programming absurdity},
-  year = {2025},
-  url = {https://github.com/hyperpolymath/befunge93-vault-cracker},
+  subtitle = {Deterministic 2D torus Befunge-93 puzzle in Vue 3, Bun, and TEA},
+  year = {2026},
+  url = {https://github.com/catachresis-colloquium/befunge93-vault-cracker},
   license = {MPL-2.0},
-  keywords = {befunge, esoteric, parody, affinescript, tea}
+  keywords = {befunge93, esoteric-languages, vue3, bun, tea}
 }
 ----
 
 == Harvard Style
 
-Polymath, H. (2025) _Befunge-93 Vault Cracker_ [Computer software]. Available at: https://github.com/hyperpolymath/befunge93-vault-cracker
-
-== OSCOLA
-
-Hyper Polymath, 'Befunge-93 Vault Cracker' (2025) <https://github.com/hyperpolymath/befunge93-vault-cracker>
-
-== MLA
-
-Polymath, Hyper. "Befunge-93 Vault Cracker." 2025, github.com/hyperpolymath/befunge93-vault-cracker.
+Jewell, J.D.A. (2026) _Befunge-93 Vault Cracker_ [Computer software]. Available at: https://github.com/catachresis-colloquium/befunge93-vault-cracker
 
 == APA 7
 
-Polymath, H. (2025). _Befunge-93 Vault Cracker_ [Computer software]. GitHub. https://github.com/hyperpolymath/befunge93-vault-cracker
+Jewell, J. D. A. (2026). _Befunge-93 Vault Cracker_ [Computer software]. GitHub. https://github.com/catachresis-colloquium/befunge93-vault-cracker
 
 == See Also
 
-* link:../CITATION.cff[CITATION.cff] (if present)
+* link:../befunge93-vault-cracker_chora.deed[Canonical Repository Deed]
 * link:reference/Befunge93.adoc[Befunge-93 Reference]

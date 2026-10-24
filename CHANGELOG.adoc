@@ -1,57 +1,26 @@
-== Changelog
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= Changelog
 
-All notable changes to `+befunge93-vault-cracker+` will be documented in
-this file.
+All notable changes to `befunge93-vault-cracker` are documented in this file.
 
-This file is generated from conventional commits by the
-https://github.com/hyperpolymath/standards/blob/main/.github/workflows/changelog-reusable.yml[`+changelog-reusable.yml+`]
-workflow (`+hyperpolymath/standards#206+`). Adopt the workflow in this
-repo’s CI to keep this file in sync automatically — see
-https://github.com/hyperpolymath/standards/blob/main/templates/cliff.toml[`+templates/cliff.toml+`]
-for the canonical config.
+== [0.2.0] - 2026-10-24
 
-The format follows https://keepachangelog.com/en/1.1.0/[Keep a
-Changelog]; this project aims to follow
-https://semver.org/spec/v2.0.0.html[Semantic Versioning].
+=== Changed
 
-=== [Unreleased]
+* Migrated UI from disguised React JSX (`src/Bf93-vault-cracker.res`) to six accessible Vue 3 Single-File Components (`src/App.vue`, `src/components/*.vue`) compiled via `vue/compiler-sfc` on Bun.
+* Unified client bundling in `scripts/build.js` (`compileClientJavaScript`) with `mtimeMs` freshness reuse in `server.js`, cutting prebuilt server startup median latency from `23.95 ms` to `0.36 ms`.
+* Derived `WALK_TRACE` directly from live `createVmState` + `stepVm` execution (`src/engine/befunge93.js`), eliminating duplicate hardcoded trace literals, and bounded `state.log` (`MAX_LOG_ENTRIES = 200`) in `src/engine/game-state.js`.
+* Migrated metadata to formal DEED v1.2.0 (`befunge93-vault-cracker_chora.deed`, `.machine_readable/0-AI-MANIFEST.deed`, `.machine_readable/descriptiles/*.deed`), `coordination.k9` v1.2.0, and K9 v1.0.0 contractiles; retired all `.a2ml` files.
+* Overhauled `Justfile` into a 16-gate `[parallel]` system & game-bit verification suite (`just check`, `just test-runtimes`, `just bench`).
 
-==== Added
+=== Added
 
-* feat: add Grade B test suite (6 targets)
+* Option-2 `metadatastician/marid` companion seam (`src/marid/`, `TelemetryPanel.vue`, `contracts/marid-vault-trial.json`, `docs/MARID-TRIAL-CONTRACT.adoc`) speaking Stage A unary I-JSON + RFC 9457 Problem Details and Stage B W3C SSE with `marid.sync.resync_required`.
+* Live `bun:ffi` Zig C-ABI oracle bridge (`src/marid/native-oracle.js` -> `_build/ffi/lib/libbefunge93_vault_cracker.so`) exporting both `befunge93_vault_cracker_run_vault` and full 26-opcode `befunge93_vault_cracker_eval_grid`, cross-verifying all three selectable 10x10 vault levels (`vault-alpha`, `torus-wrap`, `self-mod-cipher` with runtime `g`/`p` patching) and 1,000 random differential fuzz grids against the JS VM, plus multi-stage Zig + Bun `Containerfile`.
+* Compliant `launcher.sh` (`launcher-standard_praxis.deed` v0.6.0), full Provisioning Set (`mise.toml`, `mise.lock`, `guix.scm`, `manifest.scm`, `channels.scm`), strict `style-src 'self'` CSP (zero inline `style=` attributes across all Vue SFCs), and RFC 9116 `/.well-known/security.txt` HTTP route.
+* Saturated `ProvenTests` verification & benchmark suite (`44` tests, `281,044` assertions across Bun, Deno, and pnpm; `7` JS + native Zig benchmarks with `475 ns/op` `ReleaseFast` Zig C-ABI execution) and reusable AI engineering hygiene report (`docs/reports/ai-engineering-hygiene-2026-10-23.adoc`, `docs/templates/ai-hygiene-report-template.adoc`).
 
-==== Fixed
+=== Fixed
 
-* fix(ci): sync hypatia-scan.yml to canonical (kill cd-scanner build
-drift) (#9)
-* fix(ci): adopt canonical hypatia-scan.yml (env.HOME/scanner-layout +
-Comment-step gate) (#8)
-* fix(ci): Phase-2 fleet submission must not fail the security gate (#7)
-* fix(ci): hypatia-scan workdir ($\{\{ env.HOME }} resolves empty) (#6)
-* fix(ci): hypatia-scan.yml – pass GITHUB_TOKEN, use –exit-zero
-(hyperpolymath/hypatia#213) (#3)
-* fix(ci): bump erlef/setup-beam SHA for ubuntu24 runner support (#4)
-* fix(ci): move secret-scanner Cargo.toml gate from job-level if: to
-step-level (#5)
-
-==== Documentation
-
-* docs: add post-audit status report for M5 sweep
-* docs(explainme): add EXPLAINME.adoc
-
-==== CI
-
-* ci: bump actions/upload-artifact SHA to current v4 (#2)
-* ci(secret-scanner): drop duplicate –fail from trufflehog extra_args
-(#1)
-* ci: restore Dependabot security path + wire auto-merge
-
-=== Pre-history
-
-Prior commits to this file’s introduction are recorded in git history
-but not formally classified into Keep-a-Changelog sections. To backfill,
-run `+git cliff -o CHANGELOG.md+` locally using the canonical
-https://github.com/hyperpolymath/standards/blob/main/templates/cliff.toml[`+cliff.toml+`]
-— this is one-shot mechanical work.
-
-'''''
+* Remediated all 18 `pons-asinorum` and architectural findings (`P-01`..`P-15`) and all 7 zero-caller exports, including the `MaridWireClient` Fetch stream double-read bug on non-JSON `5xx` responses (`P-15`), broken `TelemetryPanel.vue` CSS tokens, WAI-ARIA `grid > row > gridcell` roving focus, fake C-ABI template filler in `ffi/zig/`, and stale pre-migration docs.

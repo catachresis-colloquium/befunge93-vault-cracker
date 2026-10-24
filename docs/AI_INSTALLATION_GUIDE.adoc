@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= AI-Assisted Installation Guide: Befunge-93 Vault Cracker
+:toc:
+
+== Steps for AI Assistants
+
+1. Read `befunge93-vault-cracker_chora.deed` and `coordination.k9` at the repository root.
+2. Run `./launcher.sh --doctor` to inspect what tools are already installed.
+3. If `mise` is available, run `mise install` to provision `bun`, `zig`, and `just` from `mise.lock`.
+4. Install locked frontend dependencies without mutating lockfiles:
++
+[source,bash]
+----
+bun install --frozen-lockfile
+----
+5. Verify the entire system in parallel:
++
+[source,bash]
+----
+just check
+----
+6. Start the puzzle server cleanly via `./launcher.sh --start` (background, port `8000`) or `just serve` (foreground).

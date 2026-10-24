@@ -1,188 +1,118 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 = Befunge-93 Vault Cracker
-image:https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=openssourcesecurity[OpenSSF Best Practices,link="https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/befunge93-vault-cracker"]
-
 :toc:
 :toclevels: 3
 :source-highlighter: rouge
 
-**A satirical UI that demonstrates esoteric programming absurdity vs. overengineered security theater.**
+image:https://img.shields.io/badge/Code-MPL--2.0-blue.svg?logo=mozilla[Code licence: MPL-2.0,link="https://opensource.org/licenses/MPL-2.0"]
+image:https://img.shields.io/badge/Docs-CC--BY--SA--4.0-blue.svg?logo=creativecommons[Docs licence: CC-BY-SA-4.0,link="https://creativecommons.org/licenses/by-sa/4.0/"]
+image:https://img.shields.io/badge/UI-Vue_3_SFC-42b883?logo=vuedotjs[Vue 3 SFC]
+image:https://img.shields.io/badge/Runtime-Bun-f9f1e1?logo=bun[Bun]
+image:https://img.shields.io/badge/FFI-Zig_C--ABI-f7a41d?logo=zig[Zig FFI]
+image:https://img.shields.io/badge/ABI-Idris2_Total-5e5086[Idris2 ABI]
 
-image::https://img.shields.io/badge/language-JavaScript-f7df1e[JavaScript]
-image::https://img.shields.io/badge/framework-React-61dafb[React]
-image::https://img.shields.io/badge/runtime-Deno-000000[Deno]
-image::https://img.shields.io/badge/humor-satirical-purple[Satirical]
+**An interactive esoteric-programming puzzle pairing a deterministic 2D Befunge-93 torus virtual machine with a satirical Vue 3 + Bun cryptographic vault UI.**
 
 == Overview
 
-Befunge-93 Vault Cracker is a **parody application** that simulates an imaginary "attack" on an overengineered cryptographic vault using the power of https://esolangs.org/wiki/Befunge[Befunge-93], an esoteric programming language from 1993 that executes on a 2D grid.
+*Befunge-93 Vault Cracker* pits an absurdly overengineered cryptographic vault stack (Ed448, SHAKE3-256, BLAKE3, Kyber-1024, Argon2id, MFA) against Chris Pressey's 1993 two-dimensional esoteric language https://esolangs.org/wiki/Befunge[Befunge-93].
 
-The joke is simple: *no amount of modern cryptography can withstand the raw power of 1993 innovation.*
+Unlike purely decorative mockups, every cell on the 10x10 torus playfield executes on a real, deterministic Befunge-93 virtual machine (`src/engine/befunge93.js` and `ffi/zig/src/main.zig`) governed by a pure functional TEA (The Elm Architecture) state reducer (`src/engine/game-state.js`) and rendered via accessible Vue 3 Single-File Components (`src/App.vue`, `src/components/*.vue`) on Bun.
 
-=== What This Is
+=== Highlights
 
-* A **satirical UI** mocking both:
-** Overengineered security solutions (Ed448, SHAKE3-256, BLAKE3, Kyber-1024, Argon2id, MFA)
-** The absurdity of esoteric programming languages
-* A **TEA (The Elm Architecture) demonstration** in JavaScript/React
-* A **CSS-first, dependency-free** single-file component
-* Built for **screenshots and laughs**, not actual security research
-
-=== What This Is NOT
-
-* An actual vault cracker (no real cryptography is harmed)
-* A Befunge-93 interpreter (the code is purely decorative)
-* Security research or hacking tool
-* A serious application
+* *Real 2D Torus Befunge-93 VM & Selectable Multi-Level Puzzles* — Cardinal pointer routing (`>`, `<`, `^`, `v`), branches (`_`, `|`), bridge (`#`), ASCII string mode (`"`), stack arithmetic, self-modifying `g`/`p` memory, and bounded termination across three 10x10 vault puzzles (`vault-alpha`, `torus-wrap`, and `self-mod-cipher`).
+* *Vue 3 Single-File Components on Bun* — Compiled natively via `scripts/vue-sfc-plugin.js` (`vue/compiler-sfc`) with zero inline styles and served under a strict `style-src 'self'` `Content-Security-Policy` by `server.js`.
+* *Pure TEA Game Reducer* — Deterministic `Model -> Message -> Model` transitions with zero idle timers, boot self-checks, tempo controls (`crawling`, `brisk`, `ludicrous`), cell opcode inspection, bounded rolling trace log (`MAX_LOG_ENTRIES = 200`), and leading-digit passcode prefix feedback.
+* *Idris2 Formal ABI + Differential Zig C-ABI VM* — Total `Fin 10` torus types and `ProvenTests` 18-category by 14-aspect taxonomy obligations in `src/abi/*.idr`, paired with a full 26-opcode native Zig C-ABI VM (`befunge93_vault_cracker_eval_grid` in `ffi/zig/`) differential-fuzzed across `1,000` random 10x10 grids via `bun:ffi` (`src/marid/native-oracle.js`).
+* *Compliant v0.6.0 Launcher & Parallel `Justfile`* — Full lifecycle launcher (`./launcher.sh`) and parallel verification (`just check`) testing both the repository as a system and the game UI bit by bit.
 
 == Quick Start
 
 [source,bash]
 ----
-# Clone the repository
-git clone https://github.com/hyperpolymath/befunge93-vault-cracker
+git clone https://github.com/catachresis-colloquium/befunge93-vault-cracker
 cd befunge93-vault-cracker
 
-# Serve locally (no build step needed - pure JS)
+# Provision tools / verify environment and start in browser
+./launcher.sh --doctor
 just serve
-
-# Open in browser
-open http://localhost:8000
 ----
 
-== Screenshots
+Open `http://127.0.0.1:8000` in your browser (or run `./launcher.sh --start` for background XDG-managed execution).
 
-The UI features:
+[[ai-install]]
+== AI-Assisted Installation
 
-* **Vault Stack Panel** - Shows six "security layers" being "melted" one by one
-* **Attack Console** - A scrolling log of absurd technical babble
-* **Befunge-93 Underpinning** - Decorative ASCII art grid
-* **Telemetry Panel** - Fake metrics (Entropy, Latency, Vibes)
+Point your AI coding assistant at link:befunge93-vault-cracker_chora.deed[`befunge93-vault-cracker_chora.deed`], link:coordination.k9[`coordination.k9`], and link:docs/AI_INSTALLATION_GUIDE.adoc[`docs/AI_INSTALLATION_GUIDE.adoc`], or run:
 
-== Architecture
+[source,bash]
+----
+./launcher.sh --ai-setup
+./launcher.sh --doctor
+bun install --frozen-lockfile
+just check
+----
 
-=== Technology Stack
-
-[cols="1,2"]
-|===
-| Component | Technology
-
-| Language | JavaScript (JSX)
-| UI Framework | React
-| State Management | TEA pattern (Model-Update-View)
-| Styling | Inline CSS (CSS-first, no dependencies)
-| Runtime | Deno (for development server)
-|===
-
-NOTE: The source file uses a `.res` extension but contains standard JavaScript/JSX. This is intentional parody nomenclature.
-
-=== Code Structure
+== Architecture & Repository Layout
 
 [source]
 ----
 befunge93-vault-cracker/
+├── befunge93-vault-cracker_chora.deed   # Canonical DEED v1.2.0 repository deed
+├── coordination.k9                      # AI & maintainer coordination invariants (v1.2.0)
+├── launcher.sh                          # Launcher Standard v0.6.0 lifecycle script
+├── Justfile                             # Parallel system & game-bit verification suite
+├── package.json                         # RFC 8785 JCS manifest (Bun + Deno + pnpm locked)
+├── server.js                            # Bun HTTP server (0.0.0.0:8000, /health, CSP)
 ├── src/
-│   └── Bf93-vault-cracker.res   # Main React component (JavaScript)
-├── docs/
-│   ├── architecture/            # Architecture documentation
-│   ├── reference/               # Reference documentation
-│   └── CITATIONS.adoc           # Citation formats
-├── .github/workflows/           # CI/CD workflows
-├── .machine_readable/           # SCM metadata files
-├── Justfile                     # Build commands
-└── README.adoc                  # This file
+│   ├── App.vue                          # Root Vue 3 puzzle shell & accessible tab layout
+│   ├── main.js                          # Browser mount entrypoint
+│   ├── components/                      # PlayfieldGrid, ExecutionControls, PasscodeVault, TracePanel, AboutPanel, TelemetryPanel
+│   ├── composables/                     # useVaultGame.js (TEA + timers) & useVaultTelemetry.js (Marid client)
+│   ├── engine/                          # Pure Befunge-93 2D torus VM & TEA game reducer
+│   ├── marid/                           # Marid wire client, local/upstream proxy & bun:ffi native Zig oracle
+│   ├── styles/vault.css                 # Responsive dark-mode puzzle stylesheet
+│   └── abi/                             # Idris2 total ABI & ProvenTests obligations
+├── contracts/marid-vault-trial.json     # Canonical JCS wire contract for Marid integration trials
+├── ffi/zig/                             # Native Zig C-ABI vault engine, tests & microbench
+├── tests/                               # Unit, Vue DOM, 4,200+ property cases, R10 contracts, E2E
+├── benches/                             # Performance benchmark suite + p95 baseline budgets
+└── .machine_readable/                   # DEED descriptiles, K9 v1.0.0 contractiles & svc/k9
 ----
 
-=== The "Vault Stack"
-
-The fictional vault being "cracked" consists of:
-
-[cols="1,1,3"]
-|===
-| Layer | Algorithm | Satirical Description
-
-| [S] | Ed448 Signatures | "Elliptic curve gravitas"
-| [K] | SHAKE3-256 Sponge | "Absorb fear, squeeze certainty"
-| [H] | BLAKE3 Hyperhash | "Parallel reassurance, artisanal entropy"
-| [Q] | Kyber-1024 | "Post quantum-ish lattice whispering"
-| [P] | Argon2id KDF | "Memory hard, time soft, vibe strong"
-| [2] | MFA + Vault | "Two factors enter, one factor leaves"
-|===
-
-=== The "Attack"
-
-The Befunge-93 "attack" produces absurd log messages like:
-
-* "Injecting BEFUNGE-93 UNDERPINNING..."
-* "Reversing control flow with 2D stack topology..."
-* "Collapsing MFA into a single factor of irony..."
-* "Attempting to typecheck the universe (failed; continue)..."
-
-== Development
-
-=== Prerequisites
-
-* https://deno.land/[Deno] runtime
-* https://github.com/casey/just[just] command runner
-
-=== Build Commands
+== Verification & Benchmarks
 
 [source,bash]
 ----
-just serve     # Start development server
-just check     # Run all checks
+just check            # Run all 16 system & game-bit checks concurrently in parallel
+just check-system     # Run repository-as-a-system bit-by-bit checks in parallel
+just check-game       # Run parody-UI game-system bit-by-bit checks in parallel
+just check-marid-seam # Verify Option-2 Marid wire contract (Stage A unary/RFC 9457 + Stage B SSE)
+just test-runtimes    # Run full test suite across Bun, Deno, and pnpm
+just bench            # Run JS/Vue and native Zig C-ABI microbenchmarks
 ----
 
-=== JavaScript Configuration
+== Optional `marid` Companion Trial
 
-The project uses vanilla JavaScript with:
+`befunge93-vault-cracker` runs standalone in the browser or on Bun, and also ships a drop-in
+wire seam (`src/marid/`, `TelemetryPanel.vue`, `contracts/marid-vault-trial.json`) for
+progressive-enhancement integration trials with `metadatastician/marid`. See
+link:docs/MARID-TRIAL-CONTRACT.adoc[`docs/MARID-TRIAL-CONTRACT.adoc`] and run
+`just serve-marid http://127.0.0.1:6274` to bridge a live Julia `Marid` companion.
 
-* React via CDN (no npm/node dependencies)
-* ES6 modules
-* Inline CSS (no external stylesheets)
-* TEA pattern for state management
+== Contributing, Documentation & Security
 
-== About Befunge-93
+* Architecture & TEA pattern: link:ARCHITECTURE.adoc[`ARCHITECTURE.adoc`], link:docs/architecture/TEA-Pattern.adoc[`docs/architecture/TEA-Pattern.adoc`]
+* Befunge-93 & torus reference: link:docs/reference/Befunge93.adoc[`docs/reference/Befunge93.adoc`]
+* ABI/FFI & Marid contracts: link:ABI-FFI-README.adoc[`ABI-FFI-README.adoc`], link:docs/MARID-TRIAL-CONTRACT.adoc[`docs/MARID-TRIAL-CONTRACT.adoc`]
+* AI engineering hygiene report & template: link:docs/reports/ai-engineering-hygiene-2026-10-23.adoc[`docs/reports/ai-engineering-hygiene-2026-10-23.adoc`], link:docs/templates/ai-hygiene-report-template.adoc[`docs/templates/ai-hygiene-report-template.adoc`]
+* Contribution guide: link:.github/CONTRIBUTING.md[`.github/CONTRIBUTING.md`]
+* Security policy: link:SECURITY.adoc[`SECURITY.adoc`]
+* Implementation evidence map: link:EXPLAINME.adoc[`EXPLAINME.adoc`]
 
-https://esolangs.org/wiki/Befunge[Befunge-93] is an esoteric programming language created by Chris Pressey in 1993. Key features:
+== Licence
 
-* **2D execution**: The program counter moves on a 2D grid, changing direction with `<>^v` commands
-* **Self-modifying**: Programs can modify their own source code
-* **Stack-based**: All operations work on a LIFO stack
-* **80x25 playfield**: Classic terminal dimensions
-
-This project uses Befunge-93 purely as a satirical element. No actual Befunge code is executed.
-
-== FAQ
-
-=== Is this a real security tool?
-
-No. This is purely satirical. No cryptography is actually implemented or attacked.
-
-=== Why Befunge-93?
-
-Because the absurdity of a 1993 esoteric 2D language "defeating" modern post-quantum cryptography is inherently funny.
-
-=== Can I use this for presentations?
-
-Yes! This was designed to be screenshot-friendly and visually entertaining for talks about:
-
-* Overengineered security solutions
-* Esoteric programming languages
-* The absurdity of "security theater"
-* TEA architecture in JavaScript/React
-
-== Contributing
-
-See link:.github/CONTRIBUTING.md[.github/CONTRIBUTING.md] for guidelines.
-
-== License
-
-MPL-2.0
-
-== See Also
-
-* https://esolangs.org/wiki/Befunge[Befunge-93 on Esolang Wiki]
-* https://react.dev/[React Documentation]
-* https://guide.elm-lang.org/architecture/[The Elm Architecture Guide]
+* Source code: `MPL-2.0` (link:LICENSE[`LICENSE`])
+* Documentation: `CC-BY-SA-4.0` (`LICENSES/CC-BY-SA-4.0.txt`)

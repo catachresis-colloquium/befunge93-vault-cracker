@@ -1,60 +1,41 @@
-== Governance
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= Governance
+:toc: preamble
 
-=== Overview
+== Overview
 
-This project is governed by the following principles and structures to
-ensure transparent, inclusive, and effective decision-making.
+`befunge93-vault-cracker` is governed by transparent, verifiable engineering rules enforced both socially by maintainers and mechanically by `coordination.k9`, `.machine_readable/contractiles/must/must.k9.ncl`, and `just check`.
 
-=== Roles and Responsibilities
+== Roles and Responsibilities
 
-==== Maintainers
+=== Maintainers
 
-Maintainers are responsible for: - Reviewing and merging pull requests -
-Managing releases and versioning - Ensuring code quality and standards -
-Triaging issues and bug reports - Community engagement and support
+Maintainers (listed in link:MAINTAINERS.adoc[`MAINTAINERS.adoc`]) are responsible for:
 
-==== Contributors
+* Reviewing and squash-merging signed pull requests once all 16 `just check` gates pass.
+* Managing semantic releases (`package.json`, `befunge93-vault-cracker_chora.deed`, `ffi/zig/src/main.zig`, `CHANGELOG.adoc`).
+* Preserving contractile invariants in `.machine_readable/contractiles/` without silent probe weakening.
+* Triaging issues and coordinated security advisories per link:SECURITY.adoc[`SECURITY.adoc`].
 
-Contributors are expected to: - Follow the code of conduct - Submit
-well-documented pull requests - Write tests for new functionality -
-Maintain existing tests - Update documentation as needed
+=== Contributors
 
-=== Decision Making
+Contributors are expected to:
 
-==== Minor Changes
+* Follow link:CODE_OF_CONDUCT.adoc[`CODE_OF_CONDUCT.adoc`] and link:.github/CONTRIBUTING.md[`.github/CONTRIBUTING.md`].
+* Accompany behavioural changes with deterministic unit, DOM, property, or R10 contract tests.
+* Keep documentation (`README.adoc`, `EXPLAINME.adoc`, `TEST-NEEDS.adoc`) in lockstep with code.
 
-* Can be made by any maintainer
-* Include bug fixes, documentation updates, dependency updates
+== Decision Making
 
-==== Major Changes
+* *Minor changes* (bug fixes, test saturation, documentation corrections) may be merged by any maintainer once CI passes.
+* *Major changes* (new wire routes, ABI/FFI symbol changes, new dependencies across `bun.lock`/`deno.lock`/`pnpm-lock.yaml`) require issue or PR review and updated contracts (`src/abi/Foreign.idr`, `contracts/marid-vault-trial.json`).
+* *Contractile amendments* (modifying or retiring a blocking invariant in `must/must.k9.ncl` or `trust/trust.k9.ncl`) require explicit maintainer sign-off and a documented rationale.
 
-* Require discussion in issues or pull requests
-* Include new features, architectural changes, API changes
-* Need approval from at least 2 maintainers
+== Licensing
 
-==== Breaking Changes
-
-* Require RFC (Request for Comments) process
-* Need approval from majority of maintainers
-* Must include migration guide
-
-=== Code of Conduct
-
-All participants are expected to follow our Code of Conduct. Violations
-can be reported to the maintainers.
-
-=== Communication
-
-* *Issues*: For bug reports and feature requests
-* *Discussions*: For questions and general discussion
-* *Pull Requests*: For code contributions
-
-=== Licensing
-
-All contributions are made under the terms of the repository’s LICENSE
-file. By submitting a pull request, you agree to license your
-contributions accordingly.
+Source code is licensed under `MPL-2.0` (link:LICENSE[`LICENSE`]); documentation is licensed under `CC-BY-SA-4.0` (`LICENSES/CC-BY-SA-4.0.txt`). By submitting a contribution, you agree to license your work under those terms.
 
 '''''
 
-_Last updated: 2026-07-18_
+_Last updated: 2026-10-24_

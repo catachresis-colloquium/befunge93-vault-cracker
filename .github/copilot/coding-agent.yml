@@ -1,6 +1,7 @@
+# SPDX-License-Identifier: MPL-2.0
 mcp_servers:
   boj-server:
-    command: npx
-    args: ["-y", "@hyperpolymath/boj-server@latest"]
+    command: bunx
+    args: ["--bun", "@hyperpolymath/boj-server@latest"]
     env:
       BOJ_URL: http://localhost:7700
