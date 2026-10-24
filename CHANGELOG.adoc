@@ -37,6 +37,39 @@ Defect-fix release. `v0.4.0` (PR #83) merged with a red test suite and a Custom 
 * Bumped `package.json`, `Justfile`, `befunge93-vault-cracker_chora.deed`, `CHANGELOG.adoc`, and `ROADMAP.adoc` to `version: 0.4.1`.
 * Suite now *74 tests / 509,687 `expect()` assertions* (from a recorded `70` / `508,044`, one of which was failing); benchmarks *8/8* within p95 budgets.
 
+=== Known Issues
+
+* **CI has now revealed a JS↔Zig differential VM divergence that had never been tested.**
+  With the Idris2 step moved last (see Fixed), `bun test` executed in CI for the
+  first time in at least five runs — and with the native Zig oracle *genuinely
+  present*, because this job builds `_build/ffi` (the Multi-Runtime Gate jobs do
+  not, which is why those stay green). Two differential-oracle tests then failed:
+  `Property P9 (differential JS VM vs native Zig C-ABI lockstep on
+  workshop-authored random 10x10 grids)`, and the Workshop lockstep unit test,
+  which received `agreement = false` where it accepted only `[null, true]`. The
+  two VMs therefore disagree even on the shipped `vault-alpha` grid at
+  `maxSteps = 500`, so the headline "differential JS↔Zig C-ABI lockstep over
+  1,000 random grids" guarantee does not currently hold. Both failures are
+  **pre-existing, not introduced by this release** — they were masked purely by
+  step ordering, and the `S9` bench rows are marked
+  `zigNotAvailableInSandbox:true` because the authoring sandbox has no Zig
+  toolchain, so the comparison short-circuits to `null` there. Candidate root
+  causes identified by source review (deliberately unverified and unfixed here,
+  since no Zig-capable environment is available): the Zig stack is a fixed
+  `[512]i64` returning `.out_of_memory` on overflow whereas the JS stack is an
+  unbounded array; Zig arithmetic wraps on `i64` (`+%`, `-%`) while JS uses
+  IEEE-754 doubles with no wrapping, so any intermediate beyond 2^53 diverges;
+  and `/` on `minInt(i64)` by `-1` yields `maxInt(i64)` in Zig but
+  `9223372036854775808` in JS. Stack *underflow* (`popStack` returning `0`), `%`
+  on `minInt/-1`, and both output opcodes (`.` as `"{d} "`, `,` as
+  `@mod(v,256)`) do match. Tracked as a critical `v0.5.0` item.
+* The Nickel L2 gate, the Idris2 `%default total` ABI gate, the native `.so`, and
+  `zigBenchNsPerOp` still cannot be exercised in the authoring sandbox: `zig`,
+  `nickel`, and `idris2` are all uninstalled and `ziglang.org` is unreachable, so
+  `native-oracle.js` reports `available:false` locally. The Idris2 CI step also
+  has no viable provisioning source and an independently broken module path — both
+  recorded as `v0.5.0` follow-ups.
+
 == [0.4.0] - 2026-10-24
 
 === Changed
