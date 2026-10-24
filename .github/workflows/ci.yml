@@ -83,19 +83,24 @@ jobs:
         with:
           version: 0.15.2
 
-      - name: Install Idris2 (%default total ABI typechecker)
-        run: |
-          apt-get update -y
-          apt-get install -y idris2
+      # Step order is deliberate: the Idris2 toolchain is provisioned from the
+      # runner's package archive and is the most fragile step in this job
+      # (`apt-get install idris2` fails outright once the runner image stops
+      # shipping it). It therefore runs LAST, after every gate that does not
+      # depend on it has already executed and reported.
+      #
+      # Previously it ran fourth, so a provisioning failure aborted the job
+      # before `bun test` ever ran -- which is how a deterministically failing
+      # property test (P6) reached `main` in PR #83 with CI reporting the suite
+      # as never-run rather than as red. The Idris2 gate below stays strict: it
+      # fails this job when the compiler cannot be provisioned, and never skips
+      # into green.
 
       - name: Frozen install, native Zig oracle build & production bundle build
         run: |
           bun install --frozen-lockfile
           (cd ffi/zig && zig build -Doptimize=ReleaseSafe --cache-dir ../../_build/ffi-cache -p ../../_build/ffi)
           bun run build
-
-      - name: Idris2 %default total ABI & ProvenTests typecheck
-        run: idris2 --build befunge93-vault-cracker.ipkg
 
       - name: System shell validations
         run: |
@@ -110,6 +115,14 @@ jobs:
 
       - name: Benchmark p95 latency gate
         run: bun run bench
+
+      - name: Install Idris2 (%default total ABI typechecker)
+        run: |
+          apt-get update -y
+          apt-get install -y idris2
+
+      - name: Idris2 %default total ABI & ProvenTests typecheck
+        run: idris2 --build befunge93-vault-cracker.ipkg
 
   zig-ffi:
     name: Zig C-ABI FFI Build, Tests & Microbench
