@@ -10,7 +10,7 @@ workflows:
         - 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6'
     '.github/workflows/codeql.yml':
         - 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1'
-        - 'github/codeql-action@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2'
+        - 'github/codeql-action@9b3254085494b55a0f7c4c2b3d2d52cc712ce370'
     '.github/workflows/dependabot-automerge.yml':
         - 'dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98'
     '.github/workflows/governance.yml':
@@ -108,9 +108,9 @@ dependencies:
         commit: 'sha1-54075bcc5e249e4758d363f27d099f55d843f124'
         owner_id: 47606891
         repo_id: 331103973
-    'github/codeql-action@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2':
-        ref: 'v4.38.2'
-        commit: 'sha1-2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2'
+    'github/codeql-action@9b3254085494b55a0f7c4c2b3d2d52cc712ce370':
+        ref: 'v4.39.1'
+        commit: 'sha1-9b3254085494b55a0f7c4c2b3d2d52cc712ce370'
         owner_id: 9919
         repo_id: 259445878
     'github/codeql-action@b96794f015dfd88f77b49b1c93e0fa7110f94c63':
