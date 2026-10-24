@@ -16,6 +16,20 @@ import {
 } from "../../src/marid/marid-wire-client.js";
 import { startVaultServer } from "../../server.js";
 
+/** Build a validated loopback URL for a locally bound ephemeral test server.
+ *
+ * Panic-attack hygiene: never interpolate a raw port into a `http://127.0.0.1:`
+ * URL — validate the port first so a malformed server handle cannot produce an
+ * unintended loopback target (SSRF-adjacent URL construction).
+ */
+function loopbackUrl(port, path = "") {
+  const p = Number(port);
+  if (!Number.isInteger(p) || p < 1 || p > 65535) {
+    throw new RangeError(`Invalid loopback port for URL construction: ${port}`);
+  }
+  return `http://127.0.0.1:${p}${path}`;
+}
+
 describe("Marid Option-2 Companion Seam — Wire Client, Proxy & Vue Integration", () => {
   test("MaridError.fromProblemDetails maps RFC 9457 statuses to typed error classes", () => {
     expect(MaridError.fromProblemDetails({ status: 400, detail: "bad field" })).toBeInstanceOf(
@@ -38,7 +52,7 @@ describe("Marid Option-2 Companion Seam — Wire Client, Proxy & Vue Integration
   test("Stage A unary HTTP/JSON + RFC 9457 Problem Details accepts verified runs and rejects malformed or unverified inputs", async () => {
     const srv = await startVaultServer({ hostname: "127.0.0.1", port: 0 });
     try {
-      const client = new MaridWireClient({ baseUrl: `http://127.0.0.1:${srv.port}` });
+      const client = new MaridWireClient({ baseUrl: loopbackUrl(srv.port) });
       const caps = await client.fetchJson("/api/marid/capabilities");
       expect(caps.backend).toBe("local-bun-shim");
       expect(caps.stageAUnaryJson).toBe(true);
@@ -76,7 +90,7 @@ describe("Marid Option-2 Companion Seam — Wire Client, Proxy & Vue Integration
       expect(ledger.verifiedCount).toBe(1);
       expect(ledger.runs[0].callsign).toBe("ada-lovelace");
 
-      const base = `http://127.0.0.1:${srv.port}`;
+      const base = loopbackUrl(srv.port);
 
       // 1. Unverified passcode -> 400 ValidationError (`application/problem+json`)
       let wrongCodeErr = null;
@@ -129,7 +143,7 @@ describe("Marid Option-2 Companion Seam — Wire Client, Proxy & Vue Integration
       maxBufferedEvents: 2,
     });
     try {
-      const base = `http://127.0.0.1:${srv.port}`;
+      const base = loopbackUrl(srv.port);
       // Use `/events` path directly to prove byte-level compatibility with `@metadatastician/marid-client`
       const client = new MaridWireClient({ baseUrl: base, eventsPath: "/events" });
 
@@ -231,7 +245,7 @@ describe("Marid Option-2 Companion Seam — Wire Client, Proxy & Vue Integration
     });
 
     try {
-      const client = new MaridWireClient({ baseUrl: `http://127.0.0.1:${appSrv.port}` });
+      const client = new MaridWireClient({ baseUrl: loopbackUrl(appSrv.port) });
       const caps = await client.fetchJson("/api/marid/capabilities");
       expect(caps.backend).toBe("marid-upstream");
       expect(caps.stageAUnaryJson).toBe(true);
@@ -262,7 +276,7 @@ describe("Marid Option-2 Companion Seam — Wire Client, Proxy & Vue Integration
       maridUpstreamUrl: `http://127.0.0.1:${closedPort}`,
     });
     try {
-      const res = await fetch(`http://127.0.0.1:${appSrvClosed.port}/api/marid/capabilities`, {
+      const res = await fetch(loopbackUrl(appSrvClosed.port, "/api/marid/capabilities"), {
         headers: { Accept: "application/json, application/problem+json" },
       });
       expect(res.status).toBe(503);
@@ -289,7 +303,7 @@ describe("Marid Option-2 Companion Seam — Wire Client, Proxy & Vue Integration
 
     const host = win.document.createElement("div");
     win.document.body.appendChild(host);
-    const telemetryClient = new MaridWireClient({ baseUrl: `http://127.0.0.1:${srv.port}` });
+    const telemetryClient = new MaridWireClient({ baseUrl: loopbackUrl(srv.port) });
     const app = createApp(App, { telemetryClient });
     app.mount(host);
 

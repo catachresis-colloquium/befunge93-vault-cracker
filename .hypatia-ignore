@@ -8,3 +8,11 @@
 # to genuine Vue 3 Single-File Components (`src/App.vue`, `src/components/*.vue`)
 # and pure ESM JavaScript (`src/engine/*.js`, `src/composables/*.js`).
 # Files covered: 0
+#
+# Stale historical GitHub Code Scanning alerts (CSA003) retired in v0.2.0:
+# the .machine_readable/6a2/*.a2ml estate metadata set and .claude/CLAUDE.md
+# no longer exist in the repository (superseded by DEED v1.2.0 documents,
+# coordination.k9 v1.2.0, and K9 v1.0.0 contractiles). Silence the stale
+# alerts so the PR Hypatia verdict grid reaches green: 0 critical / 0 high.
+code-scanning/CSA003:.machine_readable/6a2/*.a2ml
+code-scanning/CSA003:.claude/CLAUDE.md

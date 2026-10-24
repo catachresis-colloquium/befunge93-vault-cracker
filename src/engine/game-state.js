@@ -28,8 +28,22 @@ import {
   executeProgram,
   getVaultLevel,
 } from "./befunge93.js";
+import {
+  VAULT_MODE,
+  WORKSHOP_MODE,
+  WORKSHOP_GLYPHS,
+  WORKSHOP_GRID_SIZE,
+  WORKSHOP_MAX_STEPS_CAP,
+  WORKSHOP_MIN_STEPS,
+  cloneGrid,
+  makeWorkshopChallengeId,
+  validateWorkshopGrid,
+  validateWorkshopMaxSteps,
+  verifyWorkshopChallengeId,
+} from "./workshop.js";
 
 export const MAX_LOG_ENTRIES = 200;
+export const DEFAULT_WORKSHOP_MAX_STEPS = 500;
 
 function appendLog(log, ...entries) {
   const combined = [...log, ...entries];
@@ -143,6 +157,8 @@ export function createInitialModel(levelId = "vault-alpha") {
     visitedKeys: ["0,0"],
     selfChecksPassed: false,
     selfCheckReport: [],
+    mode: VAULT_MODE,
+    workshop: null,
     log: [
       `[boot] ${level.title} loaded (10x10 torus)`,
       "[hint] Follow the instruction pointer or step manually to recover the 8-digit passcode",
@@ -452,6 +468,248 @@ export function update(state, msg) {
           report.ok
             ? `[selfcheck] ${report.passedCount}/${report.totalCount} invariants verified`
             : `[selfcheck:warn] ${report.passedCount}/${report.totalCount} invariants verified`,
+        ),
+      };
+    }
+
+    case "EnterWorkshop": {
+      if (state.mode === WORKSHOP_MODE) {
+        return state;
+      }
+      const level = getVaultLevel(state.levelId);
+      const workshop = {
+        grid: cloneGrid(level.grid),
+        maxSteps: DEFAULT_WORKSHOP_MAX_STEPS,
+        trace: [],
+        traceViewIndex: 0,
+        jsResult: null,
+        zigResult: null,
+        agreement: null,
+        challengeId: null,
+        challengeValid: null,
+        selectedCell: [0, 0],
+      };
+      return {
+        ...state,
+        mode: WORKSHOP_MODE,
+        workshop,
+        log: appendLog(
+          state.log,
+          "[workshop] Entered custom vault authoring (10x10 torus, JS/Zig lockstep pending)",
+        ),
+      };
+    }
+
+    case "LeaveWorkshop": {
+      if (state.mode !== WORKSHOP_MODE || !state.workshop) {
+        return state;
+      }
+      return {
+        ...state,
+        mode: VAULT_MODE,
+        workshop: null,
+        log: appendLog(state.log, "[workshop] Returned to vault play"),
+      };
+    }
+
+    case "SetWorkshopCell": {
+      if (state.mode !== WORKSHOP_MODE || !state.workshop) {
+        return state;
+      }
+      const row = Number(msg.row);
+      const col = Number(msg.col);
+      const glyph = typeof msg.glyph === "string" ? msg.glyph : "";
+      if (
+        !Number.isInteger(row) ||
+        !Number.isInteger(col) ||
+        row < 0 ||
+        row >= WORKSHOP_GRID_SIZE ||
+        col < 0 ||
+        col >= WORKSHOP_GRID_SIZE
+      ) {
+        return state;
+      }
+      if (glyph.length !== 1 || !WORKSHOP_GLYPHS.has(glyph)) {
+        return state;
+      }
+      const workshop = { ...state.workshop };
+      const grid = cloneGrid(workshop.grid);
+      grid[row][col] = glyph;
+      Object.assign(workshop, {
+        grid,
+        trace: [],
+        traceViewIndex: 0,
+        jsResult: null,
+        zigResult: null,
+        agreement: null,
+        challengeId: null,
+        challengeValid: null,
+        selectedCell: [row, col],
+      });
+      return {
+        ...state,
+        workshop,
+        selectedCell: [row, col],
+        log: appendLog(
+          state.log,
+          `[workshop] Cell (${row},${col}) <- ${glyph === " " ? "space" : glyph}`,
+        ),
+      };
+    }
+
+    case "SetWorkshopGrid": {
+      if (state.mode !== WORKSHOP_MODE || !state.workshop) {
+        return state;
+      }
+      const { ok, reason } = validateWorkshopGrid(msg.grid);
+      if (!ok) {
+        return state;
+      }
+      const workshop = { ...state.workshop, grid: cloneGrid(msg.grid) };
+      Object.assign(workshop, {
+        trace: [],
+        traceViewIndex: 0,
+        jsResult: null,
+        zigResult: null,
+        agreement: null,
+        challengeId: null,
+        challengeValid: null,
+      });
+      return {
+        ...state,
+        workshop,
+        log: appendLog(state.log, `[workshop] Grid replaced (${reason ?? "valid 10x10"})`),
+      };
+    }
+
+    case "SetWorkshopMaxSteps": {
+      if (state.mode !== WORKSHOP_MODE || !state.workshop) {
+        return state;
+      }
+      const { ok } = validateWorkshopMaxSteps(msg.maxSteps);
+      if (!ok) {
+        return state;
+      }
+      const workshop = { ...state.workshop, maxSteps: msg.maxSteps };
+      Object.assign(workshop, {
+        trace: [],
+        traceViewIndex: 0,
+        jsResult: null,
+        zigResult: null,
+        agreement: null,
+        challengeId: null,
+        challengeValid: null,
+      });
+      return {
+        ...state,
+        workshop,
+        log: appendLog(
+          state.log,
+          `[workshop] maxSteps bound <- ${msg.maxSteps}`,
+        ),
+      };
+    }
+
+    case "DeriveWorkshopTrace": {
+      if (state.mode !== WORKSHOP_MODE || !state.workshop) {
+        return state;
+      }
+      const { maxSteps } = state.workshop;
+      const jsResult = executeProgram(state.workshop.grid, {
+        maxSteps,
+        recordHistory: true,
+      });
+      const workshop = { ...state.workshop };
+      Object.assign(workshop, {
+        jsResult,
+        zigResult: null,
+        agreement: null,
+        trace: jsResult.history,
+        traceViewIndex: jsResult.history.length > 0 ? 0 : 0,
+        challengeId: null,
+        challengeValid: null,
+      });
+      return {
+        ...state,
+        workshop,
+        log: appendLog(
+          state.log,
+          `[workshop] JS VM trace derived: ${jsResult.steps} steps${
+            jsResult.halted ? ", halted" : ", budget exhausted"
+          } (native Zig lockstep pending)`,
+        ),
+      };
+    }
+
+    case "WorkshopTraceDerived": {
+      if (state.mode !== WORKSHOP_MODE || !state.workshop) {
+        return state;
+      }
+      const { jsResult, zigResult, agreement } = msg;
+      if (!jsResult || typeof jsResult.steps !== "number") {
+        return state;
+      }
+      const workshop = { ...state.workshop, jsResult, zigResult, agreement };
+      return {
+        ...state,
+        workshop,
+        log: appendLog(
+          state.log,
+          `[workshop] Lockstep recorded: JS=${jsResult.steps} steps/${
+            jsResult.output
+          }${zigResult ? ` Zig=${zigResult.steps}/${zigResult.output}` : " Zig=n/a"}`,
+        ),
+      };
+    }
+
+    case "SetWorkshopTraceView": {
+      if (state.mode !== WORKSHOP_MODE || !state.workshop) {
+        return state;
+      }
+      const index = Number(msg.index);
+      if (!Number.isInteger(index)) {
+        return state;
+      }
+      const workshop = { ...state.workshop };
+      const last = Math.max(workshop.trace.length - 1, 0);
+      workshop.traceViewIndex = Math.max(0, Math.min(index, last));
+      return { ...state, workshop };
+    }
+
+    case "MakeWorkshopChallenge": {
+      if (state.mode !== WORKSHOP_MODE || !state.workshop) {
+        return state;
+      }
+      const { maxSteps } = state.workshop;
+      const challengeId = makeWorkshopChallengeId(state.workshop.grid, maxSteps);
+      const workshop = { ...state.workshop, challengeId, challengeValid: true };
+      return {
+        ...state,
+        workshop,
+        log: appendLog(state.log, "[workshop] Challenge descriptor minted (JCS + base64url)"),
+      };
+    }
+
+    case "VerifyWorkshopChallenge": {
+      if (state.mode !== WORKSHOP_MODE || !state.workshop) {
+        return state;
+      }
+      const { challengeId } = typeof msg.challengeId === "string" ? msg : {};
+      const { maxSteps } = state.workshop;
+      const { valid, reason } = verifyWorkshopChallengeId(
+        challengeId,
+        state.workshop.grid,
+        maxSteps,
+      );
+      const workshop = { ...state.workshop, challengeId, challengeValid: valid };
+      return {
+        ...state,
+        workshop,
+        log: appendLog(
+          state.log,
+          valid
+            ? "[workshop] Challenge descriptor verified"
+            : `[workshop:reject] Challenge descriptor invalid: ${reason}`,
         ),
       };
     }

@@ -146,7 +146,15 @@ describe("Generative Property-Based Suite >=1,000 cases/property (Categories 9 &
     for (let i = 0; i < 1000; i += 1) {
       const val = genVal(0);
       const once = jcsSerialize(val);
-      const twice = jcsSerialize(JSON.parse(once));
+      // Panic-attack hygiene: JCS output must always be valid I-JSON — guard the
+      // round-trip parse instead of assuming it cannot throw.
+      let roundTripped;
+      try {
+        roundTripped = JSON.parse(once);
+      } catch {
+        throw new Error(`JCS serializer produced non-parseable I-JSON: ${once}`);
+      }
+      const twice = jcsSerialize(roundTripped);
       expect(twice).toBe(once);
     }
   });

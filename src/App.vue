@@ -9,6 +9,7 @@ import PasscodeVault from "./components/PasscodeVault.vue";
 import TracePanel from "./components/TracePanel.vue";
 import AboutPanel from "./components/AboutPanel.vue";
 import TelemetryPanel from "./components/TelemetryPanel.vue";
+import WorkshopPanel from "./components/WorkshopPanel.vue";
 
 const props = defineProps({
   telemetryClient: { type: Object, default: undefined },
@@ -217,7 +218,7 @@ function handleTabKeydown(event) {
     </main>
 
     <main
-      v-else
+      v-else-if="state.tab === 'telemetry'"
       id="panel-telemetry"
       role="tabpanel"
       aria-labelledby="tab-telemetry"
@@ -232,6 +233,16 @@ function handleTabKeydown(event) {
         :tempo="state.tempo"
         :telemetry-client="props.telemetryClient"
       />
+    </main>
+
+    <main
+      v-else-if="state.tab === 'workshop'"
+      id="panel-workshop"
+      role="tabpanel"
+      aria-labelledby="tab-workshop"
+      class="bf-mt-20"
+    >
+      <WorkshopPanel :state="state" :dispatch="dispatch" />
     </main>
   </div>
 </template>

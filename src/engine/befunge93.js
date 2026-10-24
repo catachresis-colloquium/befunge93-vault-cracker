@@ -21,7 +21,7 @@ export const TEMPO_DELAYS = Object.freeze({
   ludicrous: 120,
 });
 
-export const TABS = Object.freeze(["vault", "trace", "about", "telemetry"]);
+export const TABS = Object.freeze(["vault", "trace", "about", "telemetry", "workshop"]);
 
 /**
  * Canonical 10x10 Befunge-93 vault grid.

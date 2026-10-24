@@ -69,13 +69,20 @@ describe("Coupling, Must-Contractiles, R10 Canonical Wrongness & Taxonomy Adequa
     let match;
     while ((match = probeRegex.exec(mustText)) !== null) {
       const id = match[1];
-      const probe = JSON.parse(`"${match[2]}"`);
+      // Panic-attack hygiene: never let a malformed probe string throw out of
+      // the harness — an unrunnable probe is a failed probe, not a crash.
+      let probe = null;
+      try {
+        probe = JSON.parse(`"${match[2]}"`);
+      } catch {
+        probe = null;
+      }
       extracted.push({ id, probe });
     }
     expect(extracted.length).toBeGreaterThanOrEqual(10);
 
     for (const { id, probe } of extracted) {
-      const status = (() => {
+      const status = probe === null ? 1 : (() => {
         try {
           execSync(probe, { stdio: "pipe" });
           return 0;
