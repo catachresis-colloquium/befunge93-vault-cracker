@@ -22,6 +22,8 @@ Defect-fix release. `v0.4.0` (PR #83) merged with a red test suite and a Custom 
 * `tests/unit/game-state-workshop.test.js` — three tests pinned the silent-rejection defect as expected behaviour (`toBe(before)`) and asserted `glyph: "Z"` was invalid; they now assert that rejections are observable, that the authored grid is preserved, and that printable data glyphs are accepted.
 * `.hypatia-ignore` — the CSA003 exemption for `.claude/CLAUDE.md` justified itself by claiming the file "no longer exists in the repository". It is tracked and was adapted to current reality at `S6`. Corrected to the true ground (the file names `.a2ml` only in order to prohibit it) and scoped so that new findings on that live file are triaged rather than assumed stale.
 * `tests/contracts/canonical-wrongness-r10.test.js` — comment still read "version 0.2.0" while asserting `0.4.0`.
+* `befunge93-vault-cracker.ipkg` — `version = 0.2.0` was stale by three releases; coupled to `0.4.1`.
+* `.github/workflows/ci.yml` — the `Vue 3 + Bun System, Game & Benchmark Suite` job provisioned Idris2 (`apt-get install -y idris2`) as its *fourth* step, so once the runner image stopped shipping that package the job aborted at exit `100` **before `bun test` ever ran**. That is precisely how the deterministically failing Property P6 reached `main` in PR #83, with CI reporting the suite as never-run rather than as red. Idris2 provisioning and the `%default total` typecheck now run *last*, after every gate that does not depend on them. The gate stays strict: it still fails the job when the compiler cannot be provisioned, and never skips into green. No `uses:` refs changed, so `actions.lock` (`v0.0.3`) needs no update.
 
 === Added
 

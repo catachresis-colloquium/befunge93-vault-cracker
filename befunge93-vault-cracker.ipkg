@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: MPL-2.0
 package befunge93-vault-cracker
 
-version = 0.2.0
+version = 0.4.1
 sourcedir = "src/abi"
 authors = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
 license = "MPL-2.0"

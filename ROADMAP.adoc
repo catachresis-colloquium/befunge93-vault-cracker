@@ -27,6 +27,8 @@
 * [ ] 1000+ generative property tests across Bun/Deno/pnpm runtimes
 * [ ] Re-measure the `S9` ledger axes that need `pons-asinorum` and `zig build bench` (`codeLoc`, `nonLockLoc`, `files`, `deadExports`, `findingList`, `ponsAndArchFindings`, `zigBenchNsPerOp`) in CI, so `S8` -> `S9` is comparable on those axes
 * [ ] Add a CI gate asserting every SFC under `src/**/*.vue` is both parseable and reachable from `src/main.js`, so an orphaned or unparseable component can never ship again
+* [ ] **Provision Idris2 in CI from a source that actually resolves.** `apt-get install -y idris2` now fails at exit `100` on the current `ubuntu-latest` image (the runner migrated to Ubuntu 26 on 2026-10-19). `v0.4.1` moved that step last so it can no longer mask the JS/Vue/Zig/bench gates, but the `%default total` gate still cannot run. Candidates: an `alpine:edge` container job (`apk add idris2` ships `0.8.0`), a pinned Chez Scheme bootstrap build (`apt-get install chezscheme` + `make bootstrap SCHEME=scheme` at a tagged `idris-lang/Idris2` release), or `pack`. Needs a maintainer decision on which version to pin.
+* [ ] **Fix the Idris2 module-path mismatch before that gate is enabled.** `befunge93-vault-cracker.ipkg` declares `sourcedir = "src/abi"` with `modules = Abi.Types, Abi.Layout, Abi.Foreign, Abi.VaultProofs`, so Idris2 resolves those to `src/abi/Abi/*.idr` — but the sources live at `src/abi/*.idr`. `idris2 --build` would therefore fail on module resolution even with a working compiler, so the ABI has most likely *never* been typechecked. Enabling the gate may surface a backlog of unenforced `%default total` errors; budget for that rather than assuming it goes green.
 
 == Non-Goals
 
