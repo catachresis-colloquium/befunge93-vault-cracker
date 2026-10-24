@@ -11,7 +11,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 mod provision "build/just/provision.just"
 
 project := "befunge93-vault-cracker"
-version := "0.4.0"
+version := "0.4.1"
 host    := env("HOST", "0.0.0.0")
 port    := env("PORT", "8000")
 

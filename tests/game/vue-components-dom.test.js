@@ -229,4 +229,92 @@ describe("Vue 3 SFC Game System & Composable Lifecycle (Categories 2, 3, 7)", ()
       app.unmount();
     }
   });
+
+  test("Workshop tab renders an editable ARIA authoring grid that cycles glyphs and navigates the torus", async () => {
+    document.body.replaceChildren();
+    const host = document.createElement("div");
+    host.id = "app";
+    document.body.appendChild(host);
+
+    const app = createApp(App);
+    app.mount(host);
+    await nextTick();
+
+    try {
+      host.querySelector("#tab-workshop").click();
+      await nextTick();
+      const panel = host.querySelector("#panel-workshop");
+      expect(panel).not.toBeNull();
+
+      const enterBtn = [...panel.querySelectorAll("button")].find((b) =>
+        b.textContent.includes("Enter Workshop Mode"),
+      );
+      expect(enterBtn).not.toBeUndefined();
+      enterBtn.click();
+      await nextTick();
+
+      // Regression (v0.4.1): `WorkshopGrid.vue` was imported by nothing, so the
+      // Workshop rendered its controls but no editable playfield at all, and the
+      // component's own unescaped-quote SFC syntax error never reached a build.
+      const rows = panel.querySelectorAll('[role="grid"] > [role="row"]');
+      expect(rows.length).toBe(10);
+      const cells = panel.querySelectorAll('[role="gridcell"]');
+      expect(cells.length).toBe(100);
+
+      // Roving tabindex: exactly one tabbable cell, starting at the origin.
+      const tabbable = [...cells].filter((c) => c.getAttribute("tabindex") === "0");
+      expect(tabbable.length).toBe(1);
+      expect(tabbable[0].getAttribute("data-cell")).toBe("0,0");
+
+      for (const c of cells) {
+        expect(c.getAttribute("type")).toBe("button");
+        expect((c.getAttribute("aria-label") || "").length).toBeGreaterThan(0);
+      }
+
+      // The seeded vault-alpha grid renders and is editable; (0,0) holds '0'.
+      expect(panel.querySelector('[data-cell="0,0"]').textContent.trim()).toBe("0");
+
+      // Regression (v0.4.1): glyphs the validator rejected were silently
+      // discarded, so Enter looked like a dead keypress. Cycling must mutate.
+      panel
+        .querySelector('[data-cell="0,0"]')
+        .dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      await nextTick();
+      expect(panel.querySelector('[data-cell="0,0"]').textContent.trim()).toBe("1");
+
+      // A valid authoring flow must not raise the rejection alert.
+      expect(panel.querySelector(".bf-workshop-alert")).toBeNull();
+
+      // Arrow keys move the selection and DOM focus across the torus.
+      panel
+        .querySelector('[data-cell="0,0"]')
+        .dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+      await nextTick();
+      expect(document.activeElement?.getAttribute("data-cell")).toBe("0,1");
+
+      panel
+        .querySelector('[data-cell="0,1"]')
+        .dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+      await nextTick();
+      expect(document.activeElement?.getAttribute("data-cell")).toBe("0,0");
+
+      // Torus wraparound: ArrowLeft from column 0 lands on column 9.
+      panel
+        .querySelector('[data-cell="0,0"]')
+        .dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+      await nextTick();
+      expect(document.activeElement?.getAttribute("data-cell")).toBe("0,9");
+
+      // Leaving the workshop tears the authoring surface back down.
+      const leaveBtn = [...panel.querySelectorAll("button")].find((b) =>
+        b.textContent.includes("Return to Vault Play"),
+      );
+      expect(leaveBtn).not.toBeUndefined();
+      leaveBtn.click();
+      await nextTick();
+      expect(panel.querySelectorAll('[role="gridcell"]').length).toBe(0);
+    } finally {
+      app.unmount();
+    }
+  });
 });

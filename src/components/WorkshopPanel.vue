@@ -21,6 +21,7 @@ import {
   getVaultLevel,
 } from "../engine/befunge93.js";
 import { deriveWorkshopTrace as deriveWorkshopTraceEngine } from "../engine/workshop.js";
+import WorkshopGrid from "./WorkshopGrid.vue";
 
 const props = defineProps({
   state: { type: Object, required: true },
@@ -44,6 +45,7 @@ const currentEntry = computed(() => {
 });
 const challengeId = computed(() => (workshop.value ? workshop.value.challengeId : null));
 const challengeValid = computed(() => (workshop.value ? workshop.value.challengeValid : null));
+const lastError = computed(() => (workshop.value ? workshop.value.lastError : null));
 const selectedCell = computed(() => props.state.selectedCell);
 const levelId = computed(() => props.state.levelId);
 
@@ -105,6 +107,14 @@ function cellDescription(r, c) {
       oracle. Challenge descriptors are RFC 8785 JCS + base64url.
     </p>
 
+    <p
+      v-if="lastError"
+      class="bf-workshop-alert"
+      role="alert"
+    >
+      {{ lastError }}
+    </p>
+
     <div class="bf-workshop-toolbar">
       <button
         type="button"
@@ -151,6 +161,15 @@ function cellDescription(r, c) {
     </div>
 
     <template v-if="workshop">
+      <WorkshopGrid
+        :grid="workshop.grid"
+        :selected-cell="selectedCell"
+        @select-cell="({ row, col }) => dispatch({ type: 'SelectCell', row, col })"
+        @change-glyph="
+          ({ row, col, glyph }) => dispatch({ type: 'SetWorkshopCell', row, col, glyph })
+        "
+      />
+
       <div class="bf-workshop-trace">
         <h3>Derived trace</h3>
         <p>

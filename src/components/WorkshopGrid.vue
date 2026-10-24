@@ -13,7 +13,7 @@
 
 <script setup>
 import { computed } from "vue";
-import { WORKSHOP_GLYPHS } from "../engine/workshop.js";
+import { WORKSHOP_OPCODE_CYCLE } from "../engine/workshop.js";
 
 const props = defineProps({
   grid: { type: Array, required: true },
@@ -22,7 +22,7 @@ const props = defineProps({
 
 const emit = defineEmits(["select-cell", "change-glyph"]);
 
-const GLYPH_ORDER = computed(() => [...WORKSHOP_GLYPHS].sort());
+const GLYPH_ORDER = computed(() => WORKSHOP_OPCODE_CYCLE);
 
 function isSelected(rIdx, cIdx) {
   return props.selectedCell[0] === rIdx && props.selectedCell[1] === cIdx;
@@ -34,6 +34,12 @@ function glyphIndex(glyph) {
 
 function nextGlyph(glyph) {
   const i = glyphIndex(glyph);
+  // A cell holding a non-opcode data glyph (decorative art such as '=', or a
+  // value written by 'p') is not on the authoring cycle, so enter the cycle at
+  // its start rather than advancing from an unknown position.
+  if (i === -1) {
+    return GLYPH_ORDER.value[0];
+  }
   return GLYPH_ORDER.value[(i + 1) % GLYPH_ORDER.value.length];
 }
 
@@ -141,7 +147,7 @@ function handleCellKeydown(event, rIdx, cIdx) {
           :class="{ selected: isSelected(rIdx, cIdx) }"
           :tabindex="isSelected(rIdx, cIdx) ? 0 : -1"
           :aria-selected="isSelected(rIdx, cIdx)"
-          :aria-label="`Cell (${rIdx}, ${cIdx}): ${cell === " " ? "space no-op" : cell}`"
+          :aria-label="`Cell (${rIdx}, ${cIdx}): ${cell === ' ' ? 'space no-op' : cell}`"
           :data-cell="`${rIdx},${cIdx}`"
           @click="() => emit('select-cell', { row: rIdx, col: cIdx })"
           @dblclick="() => emit('change-glyph', { row: rIdx, col: cIdx, glyph: nextGlyph(cell) })"

@@ -207,14 +207,22 @@ describe("Generative Property-Based Suite >=1,000 cases/property (Categories 9 &
   });
 
   test("Property P6 (1,000 cases): every single-cell workshop mutation preserves 10x10 shape and valid glyph set", () => {
+    // Seeded, like P7-P9: an unseeded `Math.random()` here made the property
+    // non-reproducible, so a regression could pass on one run and fail on the
+    // next without any source change.
+    const rng = mulberry32(0xbf93_0009);
     const glyphs = [...WORKSHOP_GLYPHS];
     const baseGrid = GRID.map((row) => row.slice());
 
+    // The shipped vault grid is itself a legal playfield: its decorative ASCII
+    // art is made of no-op data glyphs, so a mutation must never invalidate it.
+    expect(validateWorkshopGrid(baseGrid).ok).toBe(true);
+
     for (let caseIdx = 0; caseIdx < 1000; caseIdx += 1) {
       const grid = baseGrid.map((row) => row.slice());
-      const r = Math.floor(Math.random() * WORKSHOP_GRID_SIZE);
-      const c = Math.floor(Math.random() * WORKSHOP_GRID_SIZE);
-      const glyph = glyphs[Math.floor(Math.random() * glyphs.length)];
+      const r = Math.floor(rng() * WORKSHOP_GRID_SIZE);
+      const c = Math.floor(rng() * WORKSHOP_GRID_SIZE);
+      const glyph = glyphs[Math.floor(rng() * glyphs.length)];
       grid[r][c] = glyph;
 
       const { ok } = validateWorkshopGrid(grid);
@@ -226,6 +234,7 @@ describe("Generative Property-Based Suite >=1,000 cases/property (Categories 9 &
           expect(WORKSHOP_GLYPHS.has(cell)).toBe(true);
         }
       }
+      expect(grid[r][c]).toBe(glyph);
     }
   });
 

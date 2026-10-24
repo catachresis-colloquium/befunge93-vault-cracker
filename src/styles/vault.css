@@ -645,6 +645,16 @@ body {
   color: #9fb0cc;
 }
 
+.bf-workshop-alert {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  background: var(--vault-err-bg);
+  color: var(--vault-err);
+  border: 1px solid var(--vault-err-border);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
 .bf-workshop-trace,
 .bf-workshop-challenge,
 .bf-workshop-passcode {
