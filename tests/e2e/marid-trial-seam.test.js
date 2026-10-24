@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
+import { existsSync } from "node:fs";
 import { describe, expect, test } from "bun:test";
 import { Window } from "happy-dom";
 import { EXPECTED_PASSCODE } from "../../src/engine/befunge93.js";
@@ -43,11 +44,20 @@ describe("Marid Option-2 Companion Seam — Wire Client, Proxy & Vue Integration
       expect(caps.stageAUnaryJson).toBe(true);
       expect(caps.stageBSseEvents).toBe(true);
       expect(caps.storageMode).toBe("in_memory_ephemeral");
-      expect(caps.nativeOracle).toEqual({
-        available: true,
-        engine: "zig-c-abi",
-        agreesWithJsVm: true,
-      });
+      const hasNativeZig = existsSync("_build/ffi/lib");
+      expect(caps.nativeOracle).toEqual(
+        hasNativeZig
+          ? {
+              available: true,
+              engine: "zig-c-abi",
+              agreesWithJsVm: true,
+            }
+          : {
+              available: false,
+              engine: "js-vm-only",
+              agreesWithJsVm: false,
+            },
+      );
 
       const receipt = await client.fetchJson("/api/vault/runs", {
         method: "POST",
@@ -315,6 +325,40 @@ describe("Marid Option-2 Companion Seam — Wire Client, Proxy & Vue Integration
       expect(okBanner).not.toBeNull();
       expect(okBanner.textContent).toContain("run-1");
       expect(host.querySelector('[data-testid="marid-verified-count"]').textContent.trim()).toBe("1");
+
+      // Switch puzzle level to Level 3 (self-mod-cipher -> 68025714) and verify levelId forwarding
+      const levelSelect = host.querySelector("#vault-level-select");
+      levelSelect.value = "self-mod-cipher";
+      levelSelect.dispatchEvent(new win.Event("change", { bubbles: true }));
+      await nextTick();
+
+      host.querySelector("#tab-vault").click();
+      await nextTick();
+      const passInputLvl3 = host.querySelector("#vault-passcode-input");
+      passInputLvl3.value = "68025714";
+      passInputLvl3.dispatchEvent(new win.Event("input", { bubbles: true }));
+      await nextTick();
+
+      host.querySelector("#tab-telemetry").click();
+      await nextTick();
+      const badgeLvl3 = host.querySelector('[data-testid="marid-mode-badge"]');
+      for (let i = 0; i < 40 && badgeLvl3.textContent.trim() === "Unprobed"; i += 1) {
+        await new Promise((r) => setTimeout(r, 20));
+        await nextTick();
+      }
+      const submitBtnLvl3 = host.querySelector('[data-testid="marid-submit-run-btn"]');
+      expect(submitBtnLvl3.disabled).toBe(false);
+      submitBtnLvl3.click();
+      for (
+        let i = 0;
+        i < 40 && !host.querySelector('[data-testid="marid-submit-ok"]')?.textContent?.includes("run-2");
+        i += 1
+      ) {
+        await new Promise((r) => setTimeout(r, 20));
+        await nextTick();
+      }
+      expect(host.querySelector('[data-testid="marid-submit-ok"]')?.textContent).toContain("run-2");
+      expect(host.querySelector('[data-testid="marid-verified-count"]').textContent.trim()).toBe("2");
     } finally {
       app.unmount();
       host.remove();
@@ -389,5 +433,43 @@ describe("Marid Option-2 Companion Seam — Wire Client, Proxy & Vue Integration
       });
     });
     expect(parsedEvents).toEqual([{ sequence: 7, type: "vault.run.verified" }]);
+
+    // 4. Split-chunk CRLF (\r at end of chunk 1, \n at start of chunk 2) + unexpected EOF notification
+    const splitClient = new MaridWireClient({
+      baseUrl: "https://localhost",
+      fetch: async () =>
+        new Response(
+          new ReadableStream({
+            start(c) {
+              const enc = new TextEncoder();
+              c.enqueue(enc.encode('id: 8\r\ndata: {"sequence":8,"type":"one"}\r\n\r'));
+              c.enqueue(enc.encode('\nid: 9\r\ndata: {"sequence":9,"type":"two"}\r\n\r\n'));
+              c.close();
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "text/event-stream" } },
+        ),
+    });
+
+    const splitEvents = [];
+    let eofError = null;
+    await new Promise((resolve) => {
+      splitClient.subscribe(
+        "vault.runs",
+        {
+          onEvent: (evt) => splitEvents.push(evt),
+          onError: (err) => {
+            eofError = err;
+            resolve();
+          },
+        },
+        { autoReconnect: false },
+      );
+    });
+    expect(splitEvents).toEqual([
+      { sequence: 8, type: "one" },
+      { sequence: 9, type: "two" },
+    ]);
+    expect(eofError).toBeInstanceOf(MaridError);
   });
 });

@@ -86,7 +86,7 @@ export class MaridWireClient {
   }
 
   resolveUrl(path) {
-    if (path.startsWith("http://") || path.startsWith("https://")) {
+    if (/^https?:\/\//i.test(path)) {
       return path;
     }
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -205,15 +205,25 @@ export class MaridWireClient {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let buffer = "";
+        let remainder = "";
 
         while (!closed) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            if (!closed) {
+              throw new MaridError("SSE stream closed by server", 503);
+            }
+            break;
+          }
 
-          buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
-          const blocks = buffer.split("\n\n");
-          buffer = blocks.pop() ?? "";
+          const decoded = decoder.decode(value, { stream: true });
+          const rawCombined = [remainder, decoded].join("");
+          const hasTrailingCr = rawCombined.endsWith("\r");
+          const normalizable = hasTrailingCr ? rawCombined.slice(0, -1) : rawCombined;
+          const normalized = normalizable.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+          const blocks = normalized.split("\n\n");
+          const tail = blocks.pop() ?? "";
+          remainder = hasTrailingCr ? [tail, "\r"].join("") : tail;
 
           for (const block of blocks) {
             if (!block.trim() || block.startsWith(":")) continue;

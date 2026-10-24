@@ -11,18 +11,19 @@ const SYMBOL_CONT = /^[A-Za-z0-9.*/<>=!?+_-]$/;
 /** Python-style repr() of a string, used so messages match the Python linter. */
 function pyRepr(s) {
   const q = s.includes("'") && !s.includes('"') ? '"' : "'";
-  let out = q;
+  const parts = [q];
   for (const ch of s) {
     const o = ch.codePointAt(0);
-    if (ch === "\\") out += "\\\\";
-    else if (ch === q) out += "\\" + q;
-    else if (ch === "\n") out += "\\n";
-    else if (ch === "\r") out += "\\r";
-    else if (ch === "\t") out += "\\t";
-    else if (o < 0x20 || o === 0x7f) out += "\\x" + o.toString(16).padStart(2, "0");
-    else out += ch;
+    if (ch === "\\") parts.push("\\\\");
+    else if (ch === q) parts.push(`\\${q}`);
+    else if (ch === "\n") parts.push("\\n");
+    else if (ch === "\r") parts.push("\\r");
+    else if (ch === "\t") parts.push("\\t");
+    else if (o < 0x20 || o === 0x7f) parts.push(`\\x${o.toString(16).padStart(2, "0")}`);
+    else parts.push(ch);
   }
-  return out + q;
+  parts.push(q);
+  return parts.join("");
 }
 
 /** A single conformance failure with a 1-based line number. */

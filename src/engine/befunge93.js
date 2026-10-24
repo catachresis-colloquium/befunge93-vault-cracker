@@ -466,15 +466,23 @@ function deriveWalkTrace(gridSource) {
  */
 export const WALK_TRACE = deriveWalkTrace(GRID);
 
+function freezeRows(rows) {
+  return Object.freeze(rows.map((line) => Object.freeze([...line])));
+}
+
 function deriveLevelTraceFromVm(gridSource) {
   const vm = createVmState(gridSource);
   const trace = [];
+  let currentFrozenGrid = gridSource;
   while (!vm.halted && vm.steps < 500) {
     const r = vm.row;
     const c = vm.col;
     const instr = vm.grid[r][c];
     const inStr = vm.stringMode;
     stepVm(vm, { mutate: true });
+    if (!inStr && instr === "p") {
+      currentFrozenGrid = freezeRows(vm.grid.map((row) => row.join("")));
+    }
     if (instr !== " " || inStr || vm.halted) {
       const note = inStr && instr !== '"'
         ? `Stringmode push '${instr}' (${instr.charCodeAt(0)})`
@@ -485,6 +493,7 @@ function deriveLevelTraceFromVm(gridSource) {
           dir: vm.dir,
           stack: Object.freeze(vm.stack.slice()),
           output: vm.output,
+          grid: currentFrozenGrid,
           note,
         }),
       );
@@ -494,10 +503,6 @@ function deriveLevelTraceFromVm(gridSource) {
     expectedPasscode: vm.output,
     walkTrace: Object.freeze(trace),
   });
-}
-
-function freezeRows(rows) {
-  return Object.freeze(rows.map((line) => Object.freeze([...line])));
 }
 
 const TORUS_WRAP_GRID = freezeRows([

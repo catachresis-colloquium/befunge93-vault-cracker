@@ -57,7 +57,14 @@ export function useVaultGame(timers = {}) {
   }
 
   const activeLevel = computed(() => getVaultLevel(modelRef.value.levelId));
-  const grid = computed(() => activeLevel.value.grid);
+  const grid = computed(() => {
+    const stg = modelRef.value.stage;
+    const trace = activeLevel.value.walkTrace;
+    if (stg > 0 && trace[stg - 1]?.grid) {
+      return trace[stg - 1].grid;
+    }
+    return activeLevel.value.grid;
+  });
   const totalStages = computed(() => activeLevel.value.walkTrace.length);
   const progress = computed(() => deriveProgress(modelRef.value));
   const startEnabled = computed(() => canStart(modelRef.value));
@@ -65,7 +72,7 @@ export function useVaultGame(timers = {}) {
   const pauseEnabled = computed(() => modelRef.value.running);
   const selectedCellInfo = computed(() => {
     const [r, c] = modelRef.value.selectedCell;
-    return inspectGridCell(r, c, activeLevel.value.grid, activeLevel.value.walkTrace);
+    return inspectGridCell(r, c, grid.value, activeLevel.value.walkTrace);
   });
 
   return {

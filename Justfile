@@ -282,7 +282,7 @@ check-game-ui:
 
 # Game Bit 4: Generative property-based tests (4,200+ randomized grids, chaos streams & JCS)
 [group('check-game')]
-check-game-properties:
+check-game-properties: build-ffi
     bun test tests/property/befunge93-properties.test.js
 
 # Game Bit 5: Cross-layer coupling, live must.k9.ncl probes, ProvenTests adequacy & R10 wrongness pairs
@@ -292,7 +292,7 @@ check-game-contracts:
 
 # Game Bit 6: Live Bun HTTP server smoke, CSP headers & background launcher lifecycle
 [group('check-game')]
-check-game-server: build-web
+check-game-server: build-web build-ffi
     bun test tests/e2e/server-smoke.test.js
 
 # Game Bit 7: Option-2 Marid companion wire contract (Stage A unary/RFC 9457, Stage B SSE, proxy & Vue panel)

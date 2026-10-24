@@ -4,13 +4,12 @@
 /**
  * Native Zig C-ABI Befunge-93 Oracle Bridge (`bun:ffi` -> `libbefunge93_vault_cracker`).
  *
- * Bridges the verified Zig C-ABI library (`ffi/zig/src/main.zig`, matching `src/abi/Foreign.idr`)
- * into the Bun server and property test suite so both arbitrary 10x10 Befunge-93 grids
- * (`befunge93_vault_cracker_eval_grid`) and the canonical vault grid (`run_vault`) execute
- * across the native C ABI in lockstep with the JavaScript VM.
+ * Loads the prebuilt Zig C-ABI library (`_build/ffi/lib/libbefunge93_vault_cracker.*`,
+ * matching `src/abi/Foreign.idr`) via `bun:ffi` without spawning child processes at runtime.
+ * When the shared library is not built (e.g. pure-JS runtime containers), callers degrade
+ * transparently to the verified JavaScript VM.
  */
 
-import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,40 +17,19 @@ import { EXPECTED_PASSCODE, parseGrid } from "../engine/befunge93.js";
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(moduleDir, "../..");
-const zigDir = resolve(repoRoot, "ffi/zig");
 const ffiBuildPrefix = resolve(repoRoot, "_build/ffi");
-const ffiCacheDir = resolve(repoRoot, "_build/ffi-cache");
 
 let cachedSessionPromise = null;
 let cachedOraclePromise = null;
 
-function ensureNativeLibraryBuilt(suffix) {
+function resolvePrebuiltNativeLibrary(suffix) {
   const libDir = resolve(ffiBuildPrefix, "lib");
   const libName =
     suffix === "dll"
       ? `befunge93_vault_cracker.${suffix}`
       : `libbefunge93_vault_cracker.${suffix}`;
   const targetLib = resolve(libDir, libName);
-  if (existsSync(targetLib)) {
-    return targetLib;
-  }
-
-  const res = spawnSync(
-    "zig",
-    ["build", "-Doptimize=ReleaseSafe", "--cache-dir", ffiCacheDir, "-p", ffiBuildPrefix],
-    {
-      cwd: zigDir,
-      stdio: "pipe",
-    },
-  );
-  if (res.status !== 0) {
-    const stderrText = res.stderr ? res.stderr.toString("utf8").trim() : "zig build failed";
-    throw new Error(stderrText || `zig exited with status ${res.status}`);
-  }
-  if (!existsSync(targetLib)) {
-    throw new Error(`Expected Zig library missing at ${targetLib}`);
-  }
-  return targetLib;
+  return existsSync(targetLib) ? targetLib : null;
 }
 
 function getNativeFfiSession() {
@@ -61,7 +39,10 @@ function getNativeFfiSession() {
         return null;
       }
       const { CString, FFIType, dlopen, ptr, suffix } = await import("bun:ffi");
-      const libPath = ensureNativeLibraryBuilt(suffix);
+      const libPath = resolvePrebuiltNativeLibrary(suffix);
+      if (!libPath) {
+        return null;
+      }
       const lib = dlopen(libPath, {
         befunge93_vault_cracker_init: { args: [], returns: FFIType.ptr },
         befunge93_vault_cracker_free: { args: [FFIType.ptr], returns: FFIType.void },
@@ -116,7 +97,7 @@ function getNativeFfiSession() {
 
 /**
  * Evaluate any 10x10 Befunge-93 grid across the native Zig C-ABI (`befunge93_vault_cracker_eval_grid`).
- * Returns `null` on non-Bun runtimes so callers can fall back to the JS VM.
+ * Returns `null` when running on a non-Bun runtime or when `_build/ffi` is absent.
  */
 export async function evaluateGridWithNativeZig(gridSource, options = {}) {
   const maxSteps = options.maxSteps ?? 500;
@@ -138,7 +119,8 @@ export async function evaluateGridWithNativeZig(gridSource, options = {}) {
   }
 
   const neededCap = Math.max(4096, maxSteps * 24);
-  const outBuf = neededCap <= session.scratchOut.byteLength ? session.scratchOut : new Uint8Array(neededCap);
+  const outBuf =
+    neededCap <= session.scratchOut.byteLength ? session.scratchOut : new Uint8Array(neededCap);
   const outLen = session.scratchMeta.subarray(0, 1);
   const outHalted = session.scratchMeta.subarray(1, 2);
   outLen[0] = 0;
@@ -182,6 +164,14 @@ export function probeNativeVaultOracle() {
 
       try {
         const session = await getNativeFfiSession();
+        if (!session) {
+          return Object.freeze({
+            available: false,
+            engine: "js-vm-only",
+            agreesWithJsVm: false,
+            reason: "native-library-not-built",
+          });
+        }
         const outBuf = new Uint8Array(16);
         const outLen = new Uint32Array(1);
         const rc = session.lib.symbols.befunge93_vault_cracker_run_vault(

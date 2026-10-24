@@ -110,13 +110,21 @@ export function useVaultTelemetry(options = {}) {
     }
   }
 
-  async function submitVerifiedRun({ passcode, stagesCompleted, attempts, tempo, callsign }) {
+  async function submitVerifiedRun({
+    levelId,
+    passcode,
+    stagesCompleted,
+    attempts,
+    tempo,
+    callsign,
+  }) {
     submitting.value = true;
     lastError.value = null;
     try {
       const res = await client.fetchJson("/api/vault/runs", {
         method: "POST",
         body: {
+          ...(levelId ? { levelId } : {}),
           passcode,
           stagesCompleted,
           attempts: Math.max(1, attempts || 1),

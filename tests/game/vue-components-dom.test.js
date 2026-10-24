@@ -74,7 +74,7 @@ describe("Vue 3 SFC Game System & Composable Lifecycle (Categories 2, 3, 7)", ()
   });
 
   test("mounts App.vue, renders accessible 10x10 torus grid, steps all 18 stages, and unlocks vault", async () => {
-    document.body.innerHTML = "";
+    document.body.replaceChildren();
     const host = document.createElement("div");
     host.id = "app";
     document.body.appendChild(host);
@@ -187,7 +187,7 @@ describe("Vue 3 SFC Game System & Composable Lifecycle (Categories 2, 3, 7)", ()
   });
 
   test("Saturation: PlayfieldGrid keyboard navigation wraps across all 4 torus borders", async () => {
-    document.body.innerHTML = "";
+    document.body.replaceChildren();
     const host = document.createElement("div");
     document.body.appendChild(host);
     const app = createApp(App);
@@ -208,6 +208,23 @@ describe("Vue 3 SFC Game System & Composable Lifecycle (Categories 2, 3, 7)", ()
       gridEl.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
       await nextTick();
       expect(host.querySelector(".bf-inspector")?.textContent).toContain("(0, 9)");
+
+      // Switch puzzle level to self-mod-cipher and verify live `p` mutation renders ',' at (4, 3)
+      const levelSelect = host.querySelector("#vault-level-select");
+      levelSelect.value = "self-mod-cipher";
+      levelSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      await nextTick();
+      expect(host.querySelector('[data-cell="4,3"]')?.textContent?.trim()).toBe("·");
+
+      const stepBtn = host.querySelector('[data-action="step"]');
+      for (let s = 0; s < 40 && !stepBtn.disabled; s += 1) {
+        stepBtn.click();
+        await nextTick();
+      }
+      expect(host.querySelector('[data-cell="4,3"]')?.textContent?.trim()).toBe(",");
+      host.querySelector('[data-cell="4,3"]').click();
+      await nextTick();
+      expect(host.querySelector(".bf-inspector")?.textContent).toContain("ASCII character");
     } finally {
       app.unmount();
     }

@@ -29,6 +29,11 @@ jobs:
         with:
           bun-version: "1.4.2"
 
+      - name: Setup Just
+        uses: extractions/setup-just@4a174aa1487e2bcb3f86a8fe24a05361a4f4fff1
+        with:
+          just-version: "1.59.0"
+
       - name: Validate RFC 8785 JCS manifests
         run: bun scripts/jcs-canon.js --check package.json examples/web-project-bun.json contracts/marid-vault-trial.json benches/baseline.json
 
