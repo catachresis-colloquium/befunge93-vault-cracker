@@ -3,11 +3,11 @@
 // Instantiated from docs/templates/ai-hygiene-report-template.adoc
 = AI-Assisted Engineering Hygiene Report: befunge93-vault-cracker
 :repo-name: befunge93-vault-cracker
-:repo-version: 0.4.0
+:repo-version: 0.4.1
 :audit-date: 2026-10-24
 :baseline-ref: f8612d30d7784ab629c9045284c579ff1f375ebe
 :scanner-suite: hyperpolymath/pons-asinorum (Tier 0/1/2 AST + Repo Hygiene) + ProvenTests
-:runtimes-verified: Bun 1.4.4 / Node v22 (no Deno, Zig, or pnpm available in sandbox; CI gates cover them)
+:runtimes-verified: S0-S8 Bun 1.4.4 / Node v22; S9 Bun 1.4.2 / Node v22.22.3 (no Deno, Zig, pnpm, Nickel, Idris2, or just available in either sandbox; CI gates cover them)
 :toc: left
 :toclevels: 3
 :sectnums:
@@ -15,10 +15,15 @@
 
 [abstract]
 --
-Skeptical engineering teams rightly ask whether AI coding agents leave codebases cleaner or dirtier than they found them. This report presents an eight-stage (`S0`–`S8`), empirically measured case study on `befunge93-vault-cracker` (a 2D torus Befunge-93 puzzle, Vue 3 SFC frontend, Bun server, Marid HTTP/JSON + RFC 9457 + SSE telemetry seam, Idris2 ABI proofs, Zig C-ABI FFI oracle, and Custom Vault Workshop). Before changing a single line of production code, we saturated the repository to **40 automated tests executing 277,192 `expect()` assertions** (`S0`). In **Phase I (`S1`–`S4`, Debt Remediation)**, static and architectural findings fell from **18 to 0 (`-100%`)**, dead exports fell from **7 to 0 (`-100%`)**, and executable code shrank by **1,377 LoC (`-16.3%`)**. In **Phase II (`S5`–`S7`, Correct -> Adapt -> Perfect)**, we fixed CSS tokens, WAI-ARIA `grid` semantics, server bundle freshness, multi-stage Zig+Bun container builds, strict `style-src 'self'` CSP, three selectable 10x10 torus puzzle levels (including runtime `g`/`p` self-modification), and **1,000-grid differential JS-vs-Zig C-ABI VM fuzzing** — finishing at **44 tests / 281,044 assertions**, **0 findings**, **0 dead exports**. In **Phase III (`S8`, v0.4.0 Custom Vault Workshop + Saturation)**, we added the Workshop TEA mode, ARIA grid authoring UI, RFC 8785 JCS + base64url challenge descriptors, and **9 generative property suites (P1–P9, 9,200+ cases)** including differential JS-vs-Zig fuzzing on workshop-authored grids — finishing at **70 tests / 508,044 assertions**, **0 static/architectural findings**, **0 dead exports**.
+Skeptical engineering teams rightly ask whether AI coding agents leave codebases cleaner or dirtier than they found them. This report presents a nine-stage (`S0`–`S9`), empirically measured case study on `befunge93-vault-cracker` (a 2D torus Befunge-93 puzzle, Vue 3 SFC frontend, Bun server, Marid HTTP/JSON + RFC 9457 + SSE telemetry seam, Idris2 ABI proofs, Zig C-ABI FFI oracle, and Custom Vault Workshop). Before changing a single line of production code, we saturated the repository to **40 automated tests executing 277,192 `expect()` assertions** (`S0`). In **Phase I (`S1`–`S4`, Debt Remediation)**, static and architectural findings fell from **18 to 0 (`-100%`)**, dead exports fell from **7 to 0 (`-100%`)**, and executable code shrank by **1,377 LoC (`-16.3%`)**. In **Phase II (`S5`–`S7`, Correct -> Adapt -> Perfect)**, we fixed CSS tokens, WAI-ARIA `grid` semantics, server bundle freshness, multi-stage Zig+Bun container builds, strict `style-src 'self'` CSP, three selectable 10x10 torus puzzle levels (including runtime `g`/`p` self-modification), and **1,000-grid differential JS-vs-Zig C-ABI VM fuzzing** — finishing at **44 tests / 281,044 assertions**, **0 findings**, **0 dead exports**. In **Phase III (`S8`, v0.4.0 Custom Vault Workshop + Saturation)**, we added the Workshop TEA mode, ARIA grid authoring UI, RFC 8785 JCS + base64url challenge descriptors, and **9 generative property suites (P1–P9, 9,200+ cases)** including differential JS-vs-Zig fuzzing on workshop-authored grids — finishing at a *recorded* **70 tests / 508,044 assertions**, **0 static/architectural findings**, **0 dead exports**. In **Phase IV (`S9`, v0.4.1 Defect Remediation)** we re-measured `S8` from a clean checkout instead of trusting its recorded verdict, and found it **did not reproduce**: `main` was red at **69 pass / 1 fail**, and the Custom Vault Workshop was non-functional in the browser. Five coupled defects explained both — an orphaned `WorkshopGrid.vue` that nothing imported, an unparseable `:aria-label` expression inside it that no build ever reached, a 36-glyph validation alphabet missing the `g`/`p` opcodes both VMs dispatch on, `EnterWorkshop` seeding a grid its own validator rejected for all three shipped levels, and reducers that discarded invalid edits silently. A benchmark compiling only **7 of 9** SFCs is what let the unparseable component ship. `S9` finishes at **74 tests / 509,687 assertions**, **8/8 benchmarks** within p95 budgets, and every SFC both parseable and reachable.
 --
 
-== Executive Summary (`S0` Baseline -> `S4` Clean -> `S7` Perfected -> `S8` v0.4.0 Workshop)
+[NOTE]
+====
+**Phase IV is the cautionary result in this report.** `S8` recorded `70/70` pass and `0` findings, and `S8` was wrong. Its own verification claims were not reproducible from the merged tree: the failing property was deterministic, not flaky, and the headline feature was dead code. The defect survived because every layer that could have caught it had a hole in the same place — the benchmark that would have compiled the broken SFC omitted it, the DOM test that would have noticed the missing grid only asserted the tab panel existed, and the unit tests that would have flagged the dead editor encoded the silent rejection as *expected* behaviour. Saturation metrics are only worth what their coverage is worth: `508,044` assertions concentrated in the wrong places proved less than `74` tests that actually mount the component. Treat a recorded green verdict as a hypothesis to re-measure, not a fact to inherit.
+====
+
+== Executive Summary (`S0` Baseline -> `S4` Clean -> `S8` v0.4.0 Workshop -> `S9` v0.4.1 Remediation)
 
 [cols="3,2,2,2,3", options="header"]
 |===
@@ -144,7 +149,15 @@ _Populate verbatim from the automated stage harness (`step_ledger.jsonl`). Do no
 
 | `S8-v0-4-0-workshop-saturation-hygiene`
 | `153` | `19,782` | `6,525` | `148,312` | `0` | `0` | PASS
+
+| `S9-v0-4-1-workshop-alphabet-wiring-and-observable-rejections`
+| n/m | n/m | n/m | `151,901` | n/m | n/m | PASS
 |===
+
+[NOTE]
+====
+`S9` was recorded in a sandbox where `pons-asinorum`, `zig`, `deno`, `pnpm`, `nickel`, `idris2`, and `just` are neither installed nor reachable. The `n/m` ("not measured") cells are the scanner-derived axes; they are deliberately left unpopulated rather than copied from `S8` or estimated, because no LoC definition available here reproduces the recorded `S8` figures (`7,419` code LoC and `158` tracked files measured at `8cbb49d` against a recorded `6,525` / `153`). Copying `S8`'s numbers would fabricate a flat trend; guessing would fabricate a false one. `benches/baseline.json` carries the same caveat in its `notRemeasured` list. Bundle size, test/assertion counts, and all eight benchmark workloads *are* genuinely measured. Re-measure the `n/m` axes in CI before drawing `S8 -> S9` conclusions on them.
+====
 
 == Benchmark Trajectory Across Stages
 
@@ -152,26 +165,37 @@ _Record `ops/s` and median/tail latency (`p50` / `p95` in microseconds or nanose
 
 [cols="3,2,2,2,2,2,3", options="header"]
 |===
-| Workload | `S0` | `S4` | `S7` | `S8` | Mechanistic Notes
+| Workload | `S0` | `S4` | `S7` | `S8` | `S9` | Mechanistic Notes
 
 | `vm.executeVaultGrid`
-| `40,375 / 19.5µs` | `44,557 / 19.9µs` | `43,311 / 21.3µs` | `56,003 / 12.2µs` | Flat-to-improved; VM hot path stabilized, p95 halved vs S0
+| `40,375 / 19.5µs` | `44,557 / 19.9µs` | `43,311 / 21.3µs` | `56,003 / 12.2µs` | `60,885 / 12.7µs` | Flat-to-improved; VM hot path stabilized, p95 halved vs S0
 
 | `tea.fullPlaythrough`
-| `30,492 / 28µs` | `30,174 / 27.8µs` | `25,045 / 33.7µs` | `36,471 / 22.3µs` | TEA reducer inlined; p95 improved 34% vs S7
+| `30,492 / 28µs` | `30,174 / 27.8µs` | `25,045 / 33.7µs` | `36,471 / 22.3µs` | `29,711 / 24.8µs` | TEA reducer inlined; S9 within run-to-run variance of S8
 
 | `jcs.canonicalizeManifest`
-| `111,376 / 7.8µs` | `105,215 / 8.2µs` | `153,623 / 5.7µs` | `196,772 / 3.4µs` | Key-sort fast path + string interning; 1.76x vs S0
+| `111,376 / 7.8µs` | `105,215 / 8.2µs` | `153,623 / 5.7µs` | `196,772 / 3.4µs` | `205,332 / 3.8µs` | Key-sort fast path + string interning; 1.8x vs S0
 
 | `marid.postAndSseFrame`
-| `50,716 / 11.5µs` | `60,644 / 12.6µs` | `55,225 / 12.6µs` | `106,473 / 6.7µs` | SSE frame encoder inlined; 2.1x vs S0
+| `50,716 / 11.5µs` | `60,644 / 12.6µs` | `55,225 / 12.6µs` | `106,473 / 6.7µs` | `110,735 / 7.3µs` | SSE frame encoder inlined; 2.2x vs S0
 
 | `sfc.compileAllComponents`
-| `70 / 13,775.3µs` | `65 / 15,119.3µs` | `67 / 14,569.9µs` | `92 / 10,476.7µs` | Added Workshop SFCs; compile still dominated by `vue/compiler-sfc`
+| `70 / 13,775.3µs` | `65 / 15,119.3µs` | `67 / 14,569.9µs` | `92 / 10,476.7µs` | `56 / 17,213.0µs` | *Corrected*: `S8` did **not** add the Workshop SFCs — it compiled 7 of 9 and both Workshop components were missing, which is why an unparseable `WorkshopGrid.vue` shipped undetected. `S9` compiles all 9, so the higher latency is added real work, not a regression.
 
 | `server.coldBootReady`
-| `39 / 23,949.4µs` | `896 / 338.3µs` | `778 / 419.6µs` | `3,634 / 143.5µs` | `mtimeMs` freshness reuse skips rebuild on unchanged source
+| `39 / 23,949.4µs` | `896 / 338.3µs` | `778 / 419.6µs` | `3,634 / 143.5µs` | `1,176 / 940.1µs` | `mtimeMs` freshness reuse skips rebuild on unchanged source; S9 measured on a different host, so absolute latency is not comparable across stages
+
+| `workshop.validateCustomGrid` _(new in `S9`)_
+| — | — | — | — | `573,545 / 1.5µs` | Full 100-cell printable-ASCII glyph validation of an authored 10x10 torus; p95 budget `50µs`
+
+| `workshop.deriveTrace` _(new in `S9`)_
+| — | — | — | — | `40,474 / 11.0µs` | Custom-grid trace derivation + JS/Zig agreement check; p95 budget `1000µs`. Degrades to JS-only when `_build/ffi` is absent, as here.
 |===
+
+[NOTE]
+====
+`S9` benchmarks ran on a different host than `S0`–`S8` (Bun `1.4.2`, Node `v22.22.3`, no `zig`). Treat `S9` *absolute* latencies as host-local and read them against their p95 budgets, not as a delta from `S8`. All eight workloads pass their budgets. The two `workshop.*` workloads are new in `S9` and discharge the `v0.4.0` roadmap obligation to benchmark custom-grid validation and trace derivation, which `S8` did not deliver.
+====
 
 == Catalogue of Remediated Findings
 

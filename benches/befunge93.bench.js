@@ -13,6 +13,7 @@ import { compileVueSfcSource } from "../scripts/vue-sfc-plugin.js";
 import { jcsSerialize } from "../scripts/jcs-canon.js";
 import { EXPECTED_PASSCODE, GRID, WALK_TRACE, executeProgram } from "../src/engine/befunge93.js";
 import { createInitialModel, update } from "../src/engine/game-state.js";
+import { deriveWorkshopTrace, validateWorkshopGrid } from "../src/engine/workshop.js";
 import { createMaridTrialRouter } from "../src/marid/local-trial-backend.js";
 import { startVaultServer } from "../server.js";
 
@@ -56,6 +57,9 @@ async function measureAsyncBench(name, iterations, fn) {
 }
 
 const pkgObj = JSON.parse(readFileSync("package.json", "utf8"));
+// Every SFC the bundle ships. `sfc.compileAllComponents` is only a truthful
+// name while this list matches `src/**/*.vue` on disk, so the two Custom Vault
+// Workshop components are compiled here too.
 const sfcSources = [
   ["App.vue", readFileSync("src/App.vue", "utf8")],
   ["PlayfieldGrid.vue", readFileSync("src/components/PlayfieldGrid.vue", "utf8")],
@@ -64,6 +68,8 @@ const sfcSources = [
   ["TracePanel.vue", readFileSync("src/components/TracePanel.vue", "utf8")],
   ["AboutPanel.vue", readFileSync("src/components/AboutPanel.vue", "utf8")],
   ["TelemetryPanel.vue", readFileSync("src/components/TelemetryPanel.vue", "utf8")],
+  ["WorkshopGrid.vue", readFileSync("src/components/WorkshopGrid.vue", "utf8")],
+  ["WorkshopPanel.vue", readFileSync("src/components/WorkshopPanel.vue", "utf8")],
 ];
 
 const benchRouter = createMaridTrialRouter({ maxRuns: 32, maxBufferedEvents: 16 });
@@ -76,7 +82,41 @@ const postPayload = JSON.stringify({
   callsign: "bench-op\nmultiline-note-alpha\nmultiline-note-beta",
 });
 
+// A Workshop-authored 10x10 torus used as the custom-grid fixture. Deterministic
+// and representative: it mixes digits, arithmetic, string mode, the
+// self-modifying `g`/`p` pair, and decorative no-op data glyphs (`=====`,
+// `VAULT!`, `93-TEA`) of the kind the shipped levels are drawn with.
+// Row 0 (`>5.@`) pushes 5, emits ASCII '5', and halts, giving a checkable
+// invariant for the trace-derivation bench.
+const WORKSHOP_BENCH_ROWS = Object.freeze([
+  ">5.@      ",
+  " g  p  #  ",
+  "==========",
+  "|VAULT!|  ",
+  "|93-TEA|  ",
+  "==========",
+  "0123456789",
+  "+-*/%!:;_@",
+  '"OK"     @',
+  "          ",
+]);
+
+const WORKSHOP_BENCH_GRID = Object.freeze(
+  WORKSHOP_BENCH_ROWS.map((row) => Object.freeze([...row])),
+);
+
 const results = [
+  measureBench("workshop.validateCustomGrid", 20000, () => {
+    const { ok } = validateWorkshopGrid(WORKSHOP_BENCH_GRID);
+    if (!ok) throw new Error("Workshop grid validation bench invariant failed");
+  }),
+  await measureAsyncBench("workshop.deriveTrace", 400, async () => {
+    const derived = await deriveWorkshopTrace(WORKSHOP_BENCH_GRID, 500);
+    // `.` emits the digit followed by this VM's conventional trailing space.
+    if (!derived.jsResult.halted || derived.jsResult.output !== "5 ") {
+      throw new Error("Workshop trace derivation bench invariant failed");
+    }
+  }),
   measureBench("vm.executeVaultGrid", 2000, () => {
     const r = executeProgram(GRID, { maxSteps: 500 });
     if (r.output !== EXPECTED_PASSCODE) throw new Error("VM bench invariant failed");

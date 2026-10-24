@@ -23,47 +23,83 @@ export const WORKSHOP_MODE = "workshop";
 export const VAULT_MODE = "vault";
 export const WORKSHOP_GRID_SIZE = 10;
 
-// Befunge-93 instruction set (the set stepVm dispatches on) plus the blank cell.
+/**
+ * Befunge-93 playfield alphabet (the validation domain for authored grids).
+ *
+ * Any printable ASCII character is a *legal* Befunge-93 playfield cell: `stepVm`
+ * dispatches on the instruction set below and treats every other character as a
+ * no-op (`case " ": default: break`). Non-opcode glyphs are not merely tolerated
+ * in theory either -- they are reachable at runtime, because `p` writes an
+ * arbitrary popped value into the torus and `"` string mode copies literal
+ * glyphs across it.
+ *
+ * Validating against the full printable range (0x20..0x7E) is what lets the
+ * Workshop load and edit the shipped vault levels as authored: their decorative
+ * ASCII art (`=====`, `VAULT!`, `93-TEA`) and the `g`/`p` self-modifying opcodes
+ * that `self-mod-cipher` is built on are all legal Befunge-93.
+ */
+export const WORKSHOP_GLYPH_MIN = 0x20; // ' '
+export const WORKSHOP_GLYPH_MAX = 0x7e; // '~'
+
 export const WORKSHOP_GLYPHS = Object.freeze(
-  new Set([
-    " ",
-    "0",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-    "9",
-    "+",
-    "-",
-    "*",
-    "/",
-    "%",
-    "!",
-    "`",
-    '"',
-    "<",
-    ">",
-    "^",
-    "v",
-    "?",
-    "[",
-    "]",
-    "\\",
-    ":",
-    ";",
-    ",",
-    ".",
-    "$",
-    "#",
-    "|",
-    "_",
-    "@",
-  ]),
+  new Set(
+    Array.from(
+      { length: WORKSHOP_GLYPH_MAX - WORKSHOP_GLYPH_MIN + 1 },
+      (_, offset) => String.fromCharCode(WORKSHOP_GLYPH_MIN + offset),
+    ),
+  ),
 );
+
+/**
+ * Curated authoring cycle for the grid UI.
+ *
+ * Cycling a cell through all 95 printable characters would be unusable, so
+ * `Enter`/`Space`/double-click step through exactly the instruction set `stepVm`
+ * dispatches on, in a pedagogical order (blank, digits, then movement, control
+ * flow, arithmetic, stack, I/O and self-modification) rather than by code point.
+ */
+export const WORKSHOP_OPCODE_CYCLE = Object.freeze([
+  " ",
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  ">",
+  "<",
+  "^",
+  "v",
+  "?",
+  "_",
+  "|",
+  "#",
+  "+",
+  "-",
+  "*",
+  "/",
+  "%",
+  "!",
+  "`",
+  ":",
+  "\\",
+  "$",
+  ".",
+  ",",
+  '"',
+  "g",
+  "p",
+  "@",
+]);
+
+/** Every glyph in the authoring cycle must also be a valid playfield cell. */
+export function isValidWorkshopGlyph(glyph) {
+  return typeof glyph === "string" && glyph.length === 1 && WORKSHOP_GLYPHS.has(glyph);
+}
 
 export const WORKSHOP_MIN_STEPS = 1;
 export const WORKSHOP_MAX_STEPS_CAP = 10000;
@@ -100,7 +136,7 @@ export function validateWorkshopGrid(grid) {
     }
     for (let c = 0; c < row.length; c += 1) {
       const cell = row[c];
-      if (typeof cell !== "string" || cell.length !== 1 || !WORKSHOP_GLYPHS.has(cell)) {
+      if (!isValidWorkshopGlyph(cell)) {
         return {
           ok: false,
           reason: `invalid glyph at (${r},${c}): ${JSON.stringify(cell)}`,

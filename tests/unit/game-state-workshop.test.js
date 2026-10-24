@@ -12,17 +12,21 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import { EXPECTED_PASSCODE, GRID } from "../../src/engine/befunge93.js";
+import { EXPECTED_PASSCODE, GRID, VAULT_LEVELS } from "../../src/engine/befunge93.js";
 import { createInitialModel, update } from "../../src/engine/game-state.js";
 import {
   VAULT_MODE,
   WORKSHOP_MODE,
+  WORKSHOP_GLYPHS,
   WORKSHOP_MAX_STEPS_CAP,
+  WORKSHOP_OPCODE_CYCLE,
   base64urlDecode,
   base64urlEncode,
   deriveWorkshopTrace,
   gridsEqual,
+  isValidWorkshopGlyph,
   makeWorkshopChallengeId,
+  validateWorkshopGrid,
   verifyWorkshopChallengeId,
 } from "../../src/engine/workshop.js";
 
@@ -53,6 +57,56 @@ describe("Custom Vault Workshop (v0.4.0): TEA authoring mode", () => {
     expect(state.workshop.challengeId).toBeNull();
     expect(state.workshop.challengeValid).toBeNull();
     expect(state.log.some((entry) => entry.includes("[workshop] Entered"))).toBe(true);
+  });
+
+  test("EnterWorkshop seeds a grid its own validator accepts, for every shipped level", () => {
+    // Regression: the Workshop cloned the level grid but validated against a
+    // 36-glyph opcode-only alphabet, so all three shipped levels -- whose
+    // decorative ASCII art ('=====', 'VAULT!', '93-TEA') and `g`/`p` opcodes are
+    // legal Befunge-93 -- opened in a state the Workshop itself rejected, and
+    // every subsequent edit was silently discarded.
+    for (const level of VAULT_LEVELS) {
+      expect(validateWorkshopGrid(level.grid).ok).toBe(true);
+
+      let state = createInitialModel(level.id);
+      state = update(state, { type: "EnterWorkshop" });
+      expect(state.mode).toBe(WORKSHOP_MODE);
+      expect(validateWorkshopGrid(state.workshop.grid).ok).toBe(true);
+      expect(state.workshop.lastError).toBeNull();
+
+      // The editor must actually respond on the seeded grid.
+      const edited = update(state, {
+        type: "SetWorkshopCell",
+        row: 5,
+        col: 2,
+        glyph: "g",
+      });
+      expect(edited.workshop.grid[5][2]).toBe("g");
+      expect(edited.workshop.lastError).toBeNull();
+    }
+  });
+
+  test("playfield alphabet is printable ASCII and the opcode cycle is a subset", () => {
+    expect(WORKSHOP_GLYPHS.size).toBe(95);
+    for (const glyph of WORKSHOP_GLYPHS) {
+      expect(glyph.length).toBe(1);
+      expect(glyph >= " " && glyph <= "~").toBe(true);
+    }
+    // Control characters and non-ASCII must stay out of the torus.
+    for (const bad of ["\n", "\t", "\r", "\x00", "\x7f", "é", "…", ""]) {
+      expect(isValidWorkshopGlyph(bad)).toBe(false);
+    }
+    expect(isValidWorkshopGlyph("gg")).toBe(false);
+
+    // The UI authoring cycle must only offer glyphs that validate, and must
+    // include the self-modifying pair the VMs dispatch on.
+    for (const glyph of WORKSHOP_OPCODE_CYCLE) {
+      expect(WORKSHOP_GLYPHS.has(glyph)).toBe(true);
+    }
+    expect(WORKSHOP_OPCODE_CYCLE).toContain("g");
+    expect(WORKSHOP_OPCODE_CYCLE).toContain("p");
+    expect(WORKSHOP_OPCODE_CYCLE).toContain("@");
+    expect(new Set(WORKSHOP_OPCODE_CYCLE).size).toBe(WORKSHOP_OPCODE_CYCLE.length);
   });
 
   test("EnterWorkshop on an already-open workshop is a no-op", () => {
@@ -94,25 +148,55 @@ describe("Custom Vault Workshop (v0.4.0): TEA authoring mode", () => {
     expect(state.workshop.challengeValid).toBeNull();
   });
 
-  test("SetWorkshopCell rejects out-of-bounds coordinates", () => {
+  test("SetWorkshopCell rejects out-of-bounds coordinates and unprintable glyphs", () => {
     let state = createInitialModel();
     state = update(state, { type: "EnterWorkshop" });
-    const before = state;
-    expect(
-      update(state, { type: "SetWorkshopCell", row: 10, col: 0, glyph: "@" }),
-    ).toBe(before);
-    expect(
-      update(state, { type: "SetWorkshopCell", row: -1, col: 0, glyph: "@" }),
-    ).toBe(before);
-    expect(
-      update(state, { type: "SetWorkshopCell", row: 0, col: 10, glyph: "@" }),
-    ).toBe(before);
-    expect(
-      update(state, { type: "SetWorkshopCell", row: 0, col: 0, glyph: "ZZ" }),
-    ).toBe(before);
-    expect(
-      update(state, { type: "SetWorkshopCell", row: 0, col: 0, glyph: "Z" }),
-    ).toBe(before);
+    const gridBefore = state.workshop.grid.map((row) => row.slice());
+
+    const rejected = [
+      { row: 10, col: 0, glyph: "@" }, // row out of range
+      { row: -1, col: 0, glyph: "@" }, // negative row
+      { row: 0, col: 10, glyph: "@" }, // col out of range
+      { row: 0, col: 0, glyph: "ZZ" }, // multi-character cell
+      { row: 0, col: 0, glyph: "" }, // empty cell
+      { row: 0, col: 0, glyph: "\n" }, // C0 control
+      { row: 0, col: 0, glyph: "\x7f" }, // DEL
+      { row: 0, col: 0, glyph: "é" }, // printable, but outside 0x20..0x7E
+    ];
+
+    for (const msg of rejected) {
+      const next = update(state, { type: "SetWorkshopCell", ...msg });
+      // A rejection must be observable, never silent: an unreported no-op is
+      // indistinguishable from a frozen editor.
+      expect(typeof next.workshop.lastError).toBe("string");
+      expect(next.workshop.lastError.length).toBeGreaterThan(0);
+      expect(next.log[next.log.length - 1]).toContain("[workshop:rejected]");
+      // ...and it must leave the authored grid untouched.
+      expect(next.workshop.grid).toEqual(gridBefore);
+    }
+  });
+
+  test("SetWorkshopCell accepts any printable ASCII data glyph, incl. g and p", () => {
+    let state = createInitialModel();
+    state = update(state, { type: "EnterWorkshop" });
+
+    // `g`/`p` are the self-modifying opcodes that `stepVm` and the Zig C-ABI VM
+    // both dispatch on; decorative glyphs such as '=' are legal no-op cells.
+    for (const glyph of ["g", "p", "=", "Z", "~", "{", " ", '"']) {
+      const next = update(state, { type: "SetWorkshopCell", row: 4, col: 4, glyph });
+      expect(next.workshop.grid[4][4]).toBe(glyph);
+      expect(next.workshop.lastError).toBeNull();
+    }
+
+    // Every printable ASCII code point is a legal cell.
+    let accepted = 0;
+    for (let code = 0x20; code <= 0x7e; code += 1) {
+      const glyph = String.fromCharCode(code);
+      const next = update(state, { type: "SetWorkshopCell", row: 0, col: 0, glyph });
+      expect(next.workshop.grid[0][0]).toBe(glyph);
+      accepted += 1;
+    }
+    expect(accepted).toBe(95);
   });
 
   test("SetWorkshopCell rejects workshop-inactive messages", () => {
@@ -122,18 +206,34 @@ describe("Custom Vault Workshop (v0.4.0): TEA authoring mode", () => {
     ).toBe(state);
   });
 
-  test("SetWorkshopGrid accepts a valid 10x10 grid and rejects malformed ones", () => {
+  test("SetWorkshopGrid accepts a valid 10x10 grid and reports malformed ones", () => {
     let state = createInitialModel();
     state = update(state, { type: "EnterWorkshop" });
     const validGrid = GRID.map((row) => row.slice());
     state = update(state, { type: "SetWorkshopGrid", grid: validGrid });
     expect(state.workshop.grid[9][9]).toBe("@");
+    expect(state.workshop.lastError).toBeNull();
+    const accepted = state;
 
     const shortGrid = validGrid.slice(0, 9);
-    expect(update(state, { type: "SetWorkshopGrid", grid: shortGrid })).toBe(state);
+    const tooShort = update(accepted, { type: "SetWorkshopGrid", grid: shortGrid });
+    expect(tooShort.workshop.lastError).toContain("grid must be 10 rows");
+    expect(tooShort.workshop.grid).toEqual(validGrid);
+    expect(tooShort.log[tooShort.log.length - 1]).toContain("[workshop:rejected]");
+
+    // A control character is not a legal playfield cell; an uppercase data
+    // glyph is, so it must no longer be mistaken for one.
     const badCell = validGrid.map((row) => row.slice());
-    badCell[5][5] = "Z";
-    expect(update(state, { type: "SetWorkshopGrid", grid: badCell })).toBe(state);
+    badCell[5][5] = "\n";
+    const controlRejected = update(accepted, { type: "SetWorkshopGrid", grid: badCell });
+    expect(controlRejected.workshop.lastError).toContain("invalid glyph at (5,5)");
+    expect(controlRejected.workshop.grid).toEqual(validGrid);
+
+    const decorative = validGrid.map((row) => row.slice());
+    decorative[5][5] = "Z";
+    const decorativeAccepted = update(accepted, { type: "SetWorkshopGrid", grid: decorative });
+    expect(decorativeAccepted.workshop.lastError).toBeNull();
+    expect(decorativeAccepted.workshop.grid[5][5]).toBe("Z");
   });
 
   test("SetWorkshopMaxSteps enforces the bounded range", () => {
@@ -143,18 +243,19 @@ describe("Custom Vault Workshop (v0.4.0): TEA authoring mode", () => {
     expect(state.workshop.trace.length).toBeGreaterThan(0);
 
     const withTrace = state;
-    expect(
-      update(withTrace, { type: "SetWorkshopMaxSteps", maxSteps: 0 }),
-    ).toBe(withTrace);
-    expect(
-      update(withTrace, { type: "SetWorkshopMaxSteps", maxSteps: 10001 }),
-    ).toBe(withTrace);
-    expect(
-      update(withTrace, { type: "SetWorkshopMaxSteps", maxSteps: 500.5 }),
-    ).toBe(withTrace);
+    for (const bad of [0, 10001, 500.5, "500", null]) {
+      const next = update(withTrace, { type: "SetWorkshopMaxSteps", maxSteps: bad });
+      // Rejected bounds must be reported, and must not disturb the derived trace.
+      expect(typeof next.workshop.lastError).toBe("string");
+      expect(next.workshop.lastError).toContain("maxSteps rejected");
+      expect(next.workshop.maxSteps).toBe(withTrace.workshop.maxSteps);
+      expect(next.workshop.trace).toEqual(withTrace.workshop.trace);
+      expect(next.log[next.log.length - 1]).toContain("[workshop:rejected]");
+    }
 
     state = update(withTrace, { type: "SetWorkshopMaxSteps", maxSteps: 1 });
     expect(state.workshop.maxSteps).toBe(1);
+    expect(state.workshop.lastError).toBeNull();
     expect(state.workshop.trace).toEqual([]);
 
     state = update(state, { type: "SetWorkshopMaxSteps", maxSteps: WORKSHOP_MAX_STEPS_CAP });

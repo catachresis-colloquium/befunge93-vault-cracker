@@ -47,14 +47,14 @@ describe("Coupling, Must-Contractiles, R10 Canonical Wrongness & Taxonomy Adequa
     const zigMain = readFileSync("ffi/zig/src/main.zig", "utf8");
     expect(zigMain).toContain(EXPECTED_PASSCODE);
 
-    // 3. package.json, chora deed, coordination.k9, and Zig FFI agree on MPL-2.0 and version 0.2.0
+    // 3. package.json, chora deed, coordination.k9, and Zig FFI agree on MPL-2.0 and version 0.4.1
     const pkg = JSON.parse(readFileSync("package.json", "utf8"));
     const choraDeed = readFileSync("befunge93-vault-cracker_chora.deed", "utf8");
     const coordK9 = readFileSync("coordination.k9", "utf8");
 
     expect(pkg.license).toContain("MPL-2.0");
-    expect(pkg.version).toBe("0.4.0");
-    expect(choraDeed).toContain(':version "0.4.0"');
+    expect(pkg.version).toBe("0.4.1");
+    expect(choraDeed).toContain(':version "0.4.1"');
     expect(choraDeed).toContain(':license "MPL-2.0"');
     expect(choraDeed).toContain(`:passcode-oracle "${EXPECTED_PASSCODE}"`);
     expect(coordK9).toContain("license: MPL-2.0");

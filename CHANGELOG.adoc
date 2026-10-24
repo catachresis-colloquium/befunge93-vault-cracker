@@ -4,6 +4,37 @@
 
 All notable changes to `befunge93-vault-cracker` are documented in this file.
 
+== [0.4.1] - 2026-10-24
+
+Defect-fix release. `v0.4.0` (PR #83) merged with a red test suite and a Custom Vault Workshop that could not author grids in the browser. Every item below was reproduced against `main` at `8cbb49d` before being fixed.
+
+=== Fixed
+
+* `src/components/WorkshopGrid.vue` — the authoring grid was *imported by nothing*, so the Workshop rendered its controls but no editable playfield: the headline `v0.4.0` feature was unreachable in the browser. Now wired into `WorkshopPanel.vue`.
+* `src/components/WorkshopGrid.vue` — the `:aria-label` expression embedded unescaped double quotes inside a double-quoted attribute (`${cell === " " ? ...}`), so the component failed the repository's own `compileVueSfcSource` with `Unexpected token (1:38)`. The defect was invisible precisely because nothing imported the file; switched to single quotes to match `PlayfieldGrid.vue`.
+* `src/engine/workshop.js` — `WORKSHOP_GLYPHS` was a 36-glyph opcode-only subset that omitted `g` and `p`, the self-modifying opcodes that both `stepVm` and the Zig C-ABI VM dispatch on, contradicting its own doc comment. It now spans printable ASCII (`0x20..0x7E`, 95 cells), which is what Befunge-93 actually permits: unrecognised glyphs are no-ops, and `p` plus string mode can write arbitrary values to the torus anyway.
+* `src/engine/game-state.js` — `EnterWorkshop` cloned the level grid into a state the Workshop's own validator rejected, so *all three shipped levels opened broken* (`vault-alpha`/`torus-wrap` on the decorative `=====`, `VAULT!`, `93-TEA` art; `self-mod-cipher` on `g`). Every level now seeds a valid grid.
+* `src/engine/game-state.js` — `SetWorkshopCell`, `SetWorkshopGrid`, and `SetWorkshopMaxSteps` returned `state` unchanged on invalid input, silently discarding every edit. Combined with the two defects above this made the editor completely dead on any shipped level. Rejections now route through `rejectWorkshopMutation`, which preserves the grid and records the reason in `workshop.lastError` and the rolling log.
+* `src/components/WorkshopPanel.vue` — surfaces `workshop.lastError` as a `role="alert"` notice using the existing `--vault-err-*` tokens (no inline styles, no `.innerHTML`).
+* `src/components/WorkshopGrid.vue` — glyph cycling steps the new curated `WORKSHOP_OPCODE_CYCLE` (35 opcodes including `g`/`p`) rather than every printable cell, and enters the cycle at its start for a non-opcode data glyph instead of advancing from `indexOf === -1`.
+* `benches/befunge93.bench.js` — `sfc.compileAllComponents` compiled only 7 of the 9 shipped SFCs, omitting both Workshop components; that coverage gap is what let an unparseable SFC ship. The list now matches `src/**/*.vue`.
+* `tests/property/befunge93-properties.test.js` — Property P6 was the only property using unseeded `Math.random()`; it now uses `mulberry32(0xbf93_0009)` like P7-P9. It had been failing *deterministically* on `main` since PR #83 (`69` pass / `1` fail, `405,045` assertions), contradicting that PR's recorded "`70/70` pass, `508,044` assertions".
+* `tests/unit/game-state-workshop.test.js` — three tests pinned the silent-rejection defect as expected behaviour (`toBe(before)`) and asserted `glyph: "Z"` was invalid; they now assert that rejections are observable, that the authored grid is preserved, and that printable data glyphs are accepted.
+* `.hypatia-ignore` — the CSA003 exemption for `.claude/CLAUDE.md` justified itself by claiming the file "no longer exists in the repository". It is tracked and was adapted to current reality at `S6`. Corrected to the true ground (the file names `.a2ml` only in order to prohibit it) and scoped so that new findings on that live file are triaged rather than assumed stale.
+* `tests/contracts/canonical-wrongness-r10.test.js` — comment still read "version 0.2.0" while asserting `0.4.0`.
+
+=== Added
+
+* `src/engine/workshop.js` — `WORKSHOP_GLYPH_MIN`/`WORKSHOP_GLYPH_MAX`, `WORKSHOP_OPCODE_CYCLE`, and `isValidWorkshopGlyph`.
+* `benches/befunge93.bench.js` — `workshop.validateCustomGrid` and `workshop.deriveTrace` benchmarks over a deterministic Workshop-authored 10x10 fixture (custom-grid validation + trace derivation), with p95 budgets `50us` / `1000us` recorded in `benches/baseline.json`.
+* `benches/baseline.json` — `S9-v0-4-1-workshop-alphabet-wiring-and-observable-rejections` stage. Scanner-derived fields (`codeLoc`, `nonLockLoc`, `files`, `deadExports`, `findingList`, `ponsAndArchFindings`, `zigBenchNsPerOp`) are deliberately *absent* rather than copied or guessed: `pons-asinorum` and `zig` are unavailable in the authoring sandbox and no LoC definition reproduces the recorded `S8` figures. The `notRemeasured` list records exactly which axes need CI re-measurement.
+* Tests — 4 new: every shipped level seeds a validator-accepted grid that responds to edits; the playfield alphabet is exactly printable ASCII with the opcode cycle a subset; all 95 printable code points are authorable cells; and a `happy-dom` test that the Workshop tab renders a 100-cell ARIA authoring grid with roving tabindex, working glyph cycling, and torus-wrap keyboard navigation.
+
+=== Changed
+
+* Bumped `package.json`, `Justfile`, `befunge93-vault-cracker_chora.deed`, `CHANGELOG.adoc`, and `ROADMAP.adoc` to `version: 0.4.1`.
+* Suite now *74 tests / 509,687 `expect()` assertions* (from a recorded `70` / `508,044`, one of which was failing); benchmarks *8/8* within p95 budgets.
+
 == [0.4.0] - 2026-10-24
 
 === Changed

@@ -9,10 +9,30 @@
 # and pure ESM JavaScript (`src/engine/*.js`, `src/composables/*.js`).
 # Files covered: 0
 #
-# Stale historical GitHub Code Scanning alerts (CSA003) retired in v0.2.0:
-# the .machine_readable/6a2/*.a2ml estate metadata set and .claude/CLAUDE.md
-# no longer exist in the repository (superseded by DEED v1.2.0 documents,
-# coordination.k9 v1.2.0, and K9 v1.0.0 contractiles). Silence the stale
-# alerts so the PR Hypatia verdict grid reaches green: 0 critical / 0 high.
+# Stale historical GitHub Code Scanning alerts (CSA003), reconciled in v0.4.1.
+#
+# CSA003 fires on references to retired v0.1.0 estate paths. Both exemptions
+# below are scoped to that single retired-path concern; neither is a blanket
+# silence of the file involved.
+#
+# (1) `.machine_readable/6a2/*.a2ml` — GENUINELY RETIRED. The estate metadata
+#     set was superseded in v0.2.0 by DEED v1.2.0 documents, coordination.k9
+#     v1.2.0, and K9 v1.0.0 contractiles. No `.a2ml` file exists anywhere in the
+#     tree, and `tests/validate_structure.sh` actively asserts the absence of
+#     `.machine_readable/6a2`. Alerts against these paths are historical.
 code-scanning/CSA003:.machine_readable/6a2/*.a2ml
+#
+# (2) `.claude/CLAUDE.md` — LIVE AND MAINTAINED (corrected in v0.4.1). An
+#     earlier baseline entry justified this exemption by claiming the file "no
+#     longer exists in the repository", which is false: it is tracked and was
+#     adapted to current repository reality at `S6`. The alert actually arises
+#     because the file *names* the retired `.a2ml` extension in order to PROHIBIT
+#     it ("Never introduce ... `.a2ml` files") — a prohibition, not a live
+#     dependency. The exemption stands on that narrow ground only.
+#
+#     Do not widen this entry: because the file is live, any NEW CSA003 finding
+#     against `.claude/CLAUDE.md` must be triaged on its merits rather than
+#     assumed stale. A false justification in a security baseline is worse than
+#     no exemption at all, since it invites future maintainers to trust a premise
+#     that the tree contradicts.
 code-scanning/CSA003:.claude/CLAUDE.md

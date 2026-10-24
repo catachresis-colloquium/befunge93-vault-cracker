@@ -9,7 +9,7 @@
 ** `game-state.js`: Side-effect-free TEA (`Model -> Message -> Model`) reducer, boot self-checks, opcode cell inspector, and prefix-scoring passcode validator.
 . *Vue 3 Reactive UI (`src/composables/`, `src/components/`, `src/App.vue`)*
 ** `useVaultGame.js` binds the pure TEA reducer to Vue 3 `shallowRef` state and manages timer lifecycles without idle polling.
-** Modular SFCs (`PlayfieldGrid.vue`, `ExecutionControls.vue`, `PasscodeVault.vue`, `TracePanel.vue`, `AboutPanel.vue`, `TelemetryPanel.vue`) compiled via `vue/compiler-sfc` in `scripts/vue-sfc-plugin.js`.
+** Modular SFCs (`PlayfieldGrid.vue`, `ExecutionControls.vue`, `PasscodeVault.vue`, `TracePanel.vue`, `AboutPanel.vue`, `TelemetryPanel.vue`, `WorkshopPanel.vue`, `WorkshopGrid.vue`) compiled via `vue/compiler-sfc` in `scripts/vue-sfc-plugin.js`. Every SFC under `src/**/*.vue` must be both parseable and reachable from `src/main.js`; `benches/befunge93.bench.js` compiles all of them so an orphaned or unparseable component fails the benchmark suite.
 . *Optional Marid Companion Seam (`src/marid/`, `src/composables/useVaultTelemetry.js`, `contracts/marid-vault-trial.json`)*
 ** Progressive-enhancement adapter matching `@metadatastician/marid-client` (Stage A unary I-JSON + RFC 9457 `application/problem+json`, Stage B W3C SSE `/events?topic=vault.runs&last_event_id=<seq>` with `marid.sync.resync_required`).
 ** Built-in Bun trial backend when standalone; fail-closed reverse proxy (`MARID_UPSTREAM_URL`) when paired with a live Julia `Marid` server (`docs/MARID-TRIAL-CONTRACT.adoc`).

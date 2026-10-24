@@ -31,11 +31,11 @@ import {
 import {
   VAULT_MODE,
   WORKSHOP_MODE,
-  WORKSHOP_GLYPHS,
   WORKSHOP_GRID_SIZE,
   WORKSHOP_MAX_STEPS_CAP,
   WORKSHOP_MIN_STEPS,
   cloneGrid,
+  isValidWorkshopGlyph,
   makeWorkshopChallengeId,
   validateWorkshopGrid,
   validateWorkshopMaxSteps,
@@ -50,6 +50,26 @@ function appendLog(log, ...entries) {
   return combined.length > MAX_LOG_ENTRIES
     ? combined.slice(combined.length - MAX_LOG_ENTRIES)
     : combined;
+}
+
+/**
+ * Record a rejected Workshop mutation.
+ *
+ * Workshop reducers must never fail silently. Returning `state` unchanged leaves
+ * the authoring surface looking dead to the player: every edit is discarded with
+ * no feedback at all, which is indistinguishable from a frozen UI. A rejection
+ * keeps the grid intact but records the reason in both the rolling log and
+ * `workshop.lastError`, which `WorkshopPanel.vue` surfaces as a `role="alert"`.
+ *
+ * @param {object} state current model (must be in WORKSHOP_MODE)
+ * @param {string} reason human-readable rejection reason
+ */
+function rejectWorkshopMutation(state, reason) {
+  return {
+    ...state,
+    workshop: { ...state.workshop, lastError: reason },
+    log: appendLog(state.log, `[workshop:rejected] ${reason}`),
+  };
 }
 
 /**
@@ -487,6 +507,7 @@ export function update(state, msg) {
         agreement: null,
         challengeId: null,
         challengeValid: null,
+        lastError: null,
         selectedCell: [0, 0],
       };
       return {
@@ -527,10 +548,16 @@ export function update(state, msg) {
         col < 0 ||
         col >= WORKSHOP_GRID_SIZE
       ) {
-        return state;
+        return rejectWorkshopMutation(
+          state,
+          `cell (${row},${col}) is outside the ${WORKSHOP_GRID_SIZE}x${WORKSHOP_GRID_SIZE} torus`,
+        );
       }
-      if (glyph.length !== 1 || !WORKSHOP_GLYPHS.has(glyph)) {
-        return state;
+      if (!isValidWorkshopGlyph(glyph)) {
+        return rejectWorkshopMutation(
+          state,
+          `glyph ${JSON.stringify(glyph)} at (${row},${col}) is not printable ASCII (0x20..0x7E)`,
+        );
       }
       const workshop = { ...state.workshop };
       const grid = cloneGrid(workshop.grid);
@@ -544,6 +571,7 @@ export function update(state, msg) {
         agreement: null,
         challengeId: null,
         challengeValid: null,
+        lastError: null,
         selectedCell: [row, col],
       });
       return {
@@ -563,7 +591,7 @@ export function update(state, msg) {
       }
       const { ok, reason } = validateWorkshopGrid(msg.grid);
       if (!ok) {
-        return state;
+        return rejectWorkshopMutation(state, `grid rejected: ${reason}`);
       }
       const workshop = { ...state.workshop, grid: cloneGrid(msg.grid) };
       Object.assign(workshop, {
@@ -574,11 +602,12 @@ export function update(state, msg) {
         agreement: null,
         challengeId: null,
         challengeValid: null,
+        lastError: null,
       });
       return {
         ...state,
         workshop,
-        log: appendLog(state.log, `[workshop] Grid replaced (${reason ?? "valid 10x10"})`),
+        log: appendLog(state.log, "[workshop] Grid replaced (valid 10x10)"),
       };
     }
 
@@ -586,9 +615,9 @@ export function update(state, msg) {
       if (state.mode !== WORKSHOP_MODE || !state.workshop) {
         return state;
       }
-      const { ok } = validateWorkshopMaxSteps(msg.maxSteps);
+      const { ok, reason } = validateWorkshopMaxSteps(msg.maxSteps);
       if (!ok) {
-        return state;
+        return rejectWorkshopMutation(state, `maxSteps rejected: ${reason}`);
       }
       const workshop = { ...state.workshop, maxSteps: msg.maxSteps };
       Object.assign(workshop, {
@@ -599,6 +628,7 @@ export function update(state, msg) {
         agreement: null,
         challengeId: null,
         challengeValid: null,
+        lastError: null,
       });
       return {
         ...state,
