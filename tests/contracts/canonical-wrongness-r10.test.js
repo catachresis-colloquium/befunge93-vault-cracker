@@ -53,8 +53,8 @@ describe("Coupling, Must-Contractiles, R10 Canonical Wrongness & Taxonomy Adequa
     const coordK9 = readFileSync("coordination.k9", "utf8");
 
     expect(pkg.license).toContain("MPL-2.0");
-    expect(pkg.version).toBe("0.2.0");
-    expect(choraDeed).toContain(':version "0.2.0"');
+    expect(pkg.version).toBe("0.4.0");
+    expect(choraDeed).toContain(':version "0.4.0"');
     expect(choraDeed).toContain(':license "MPL-2.0"');
     expect(choraDeed).toContain(`:passcode-oracle "${EXPECTED_PASSCODE}"`);
     expect(coordK9).toContain("license: MPL-2.0");
