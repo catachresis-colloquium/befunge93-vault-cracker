@@ -29,10 +29,14 @@ jobs:
         with:
           bun-version: "1.4.2"
 
-      - name: Setup Just
-        uses: extractions/setup-just@4a174aa1487e2bcb3f86a8fe24a05361a4f4fff1
-        with:
-          just-version: "1.59.0"
+      - name: Install Just 1.59.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download 1.59.0 --repo casey/just --pattern "just-1.59.0-x86_64-unknown-linux-musl.tar.gz" --dir "$RUNNER_TEMP"
+          echo "409044617b6f06517c1035e55ca38c8c856ff8b650e41bc2aa1ef82d5903a23e  $RUNNER_TEMP/just-1.59.0-x86_64-unknown-linux-musl.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/just-1.59.0-x86_64-unknown-linux-musl.tar.gz" -C "$RUNNER_TEMP" just
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
 
       - name: Validate RFC 8785 JCS manifests
         run: bun scripts/jcs-canon.js --check package.json examples/web-project-bun.json contracts/marid-vault-trial.json benches/baseline.json
