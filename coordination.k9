@@ -1,0 +1,154 @@
+K9!
+# SPDX-License-Identifier: MPL-2.0
+# SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+# coordination.k9 — AI Coordination Protocol (v1.2.0) for befunge93-vault-cracker
+# Conforms to hyperpolymath/standards 2-protocols/k9-coordination/spec/abnf/coordination-k9-grammar_v1.2.abnf
+
+metadata:
+  schema: k9-coordination
+  schema_version: 1.2.0
+  generated_by: manual
+  last_updated: 2026-10-23
+
+project:
+  name: "befunge93-vault-cracker"
+  description: "Interactive 2D Befunge-93 torus puzzle and TEA state-machine game powered by Vue 3, Bun, Zig C-ABI FFI, and Idris2 formal ABI obligations."
+  license: MPL-2.0
+  repo: catachresis-colloquium/befunge93-vault-cracker
+  deed_ref: befunge93-vault-cracker_chora.deed
+  languages:
+    - JavaScript
+    - Vue
+    - Zig
+    - Idris2
+    - Nickel
+  build_system: just
+  runtime: bun
+
+build_commands:
+  - command: "just check"
+    purpose: "Run all structural, runtime, UI, FFI, contract, and security verification suites in parallel"
+  - command: "just build"
+    purpose: "Bundle Vue 3 Single-File Components and assets into dist/ via Bun.build"
+  - command: "just test"
+    purpose: "Execute full unit, DOM game-system, property, R10 wrongness, E2E, and Zig FFI test suites"
+  - command: "just bench"
+    purpose: "Execute Bun/Vue/VM and native Zig C-ABI microbenchmarks against baseline thresholds"
+  - command: "just serve"
+    purpose: "Start the Bun HTTP game server on 0.0.0.0:8000"
+  - command: "./launcher.sh --doctor"
+    purpose: "Run estate launcher v0.6.0 and provisioning v1.0.0 environment diagnostics"
+
+invariants:
+  - id: zero-a2ml-files
+    rule: "No .a2ml files exist anywhere in the repository; all metadata resides in .deed, coordination.k9, and K9 v1.0.0 contractiles"
+    reason: "Estate ULTRAPLAN 2026-10-19 retired A2ML in favour of formal DEED S-expressions and K9 components."
+    severity: critical
+  - id: vue-bun-no-banned-langs
+    rule: "UI components live in Vue 3 SFCs and ESM .js modules running on Bun; no .ts, .tsx, .res, package-lock.json, or yarn.lock files exist"
+    reason: "LANGUAGE-POLICY §1.4 mandates Bun first and zero disguised TypeScript/ReScript exemptions."
+    severity: critical
+  - id: dual-vm-trace-lockstep
+    rule: "Executing GRID on both the JS Befunge-93 torus VM and the Zig C-ABI FFI yields EXPECTED_PASSCODE (98261047) and matches WALK_TRACE"
+    reason: "Category 18 coupling/drift-freedom prevents guided UI walk stages from diverging from actual playfield semantics."
+    severity: critical
+  - id: jcs-canonical-manifest
+    rule: "package.json is RFC 8785 JCS canonical and accompanied by synchronized bun.lock, deno.lock, and pnpm-lock.yaml"
+    reason: "Required by hyperpolymath/standards tools/js-runtimes gate."
+    severity: high
+  - id: sha-pinned-workflows
+    rule: "Every GitHub Actions workflow declares top-level permissions, carries an SPDX header, and pins actions to immutable 40-hex SHAs"
+    reason: "Supply-chain immutability enforced by governance-reusable.yml."
+    severity: high
+
+protected:
+  - path: LICENSE
+    reason: "Authoritative verbatim MPL-2.0 licence text"
+  - path: befunge93-vault-cracker_chora.deed
+    reason: "Canonical repository identity, clade, status, and playbook deed"
+  - path: src/abi/
+    reason: "Total Idris2 ABI and ProvenTests obligations defining torus bounds and C-ABI contracts"
+
+architecture:
+  - id: vue3-sfc-on-bun
+    decision: "Compile Vue 3 Single-File Components directly via vue/compiler-sfc in a native Bun plugin without Vite or Node toolchains"
+    reason: "Eliminates heavy bundler dependencies while supporting native bun test DOM mounting and fast Bun.build output."
+    alternatives_rejected:
+      - "Disguised React JSX inside .res files requiring .hypatia-ignore exemptions"
+      - "Heavy Vite + npm/Node build pipeline"
+  - id: verified-befunge93-torus
+    decision: "Implement a genuine 10x10 Befunge-93 torus interpreter in both ESM JavaScript and Zig C-ABI alongside the 18-stage TEA UI reducer"
+    reason: "Guarantees the puzzle grid actually computes the 8-digit vault passcode rather than faking output."
+    alternatives_rejected:
+      - "Unverified hard-coded walk trace over a non-halting grid"
+
+innervation:
+  afferent:
+    - signal: "test.results"
+      description: "Parallel system, game-UI, property, R10 wrongness, and FFI test verdicts from just check"
+      triggers_on: "CI completion"
+      consumers:
+        - hypatia
+        - verisimdb
+  efferent:
+    - signal: "hypatia.finding"
+      action: "Triage panic-attack and pons-asinorum scan reports before merge"
+      auto_fix: false
+  reflex:
+    - trigger: "pre-commit"
+      guard: "just check"
+      action: "Block commit when any structural, DEED, K9, JCS, UI, VM, or FFI gate fails"
+    - trigger: "file-create"
+      guard: "Reject banned extensions (*.ts, *.tsx, *.res, *.a2ml, package-lock.json)"
+      action: "Refuse creation and point to coordination.k9 do_not_create rules"
+
+do_not_create:
+  - pattern: "**/*.a2ml"
+    reason: "A2ML is retired estate-wide — use formal .deed files and K9 v1.0.0 components"
+  - pattern: "**/*.ts"
+    reason: "TypeScript is banned — author ESM JavaScript or AffineScript"
+  - pattern: "**/*.res"
+    reason: "ReScript and disguised .res JSX files are retired in this repository — use Vue 3 SFCs"
+  - pattern: "**/package-lock.json"
+    reason: "npm lockfiles are banned (standards#67) — use bun.lock with synchronized deno.lock and pnpm-lock.yaml"
+  - pattern: Dockerfile
+    reason: "Use Containerfile (Podman/OCI standard)"
+  - pattern: Makefile
+    reason: "Use Justfile and .machine_readable/contractiles/"
+
+terminology:
+  - correct: coordination.k9
+    incorrect:
+      - AGENT.md
+      - settings-file
+    context: "Per-repo AI nerve receptor conforming to coordination-k9-grammar_v1.2.abnf."
+  - correct: repo-deed
+    incorrect:
+      - STATE.a2ml
+      - META.a2ml
+    context: "befunge93-vault-cracker_chora.deed replaces the retired 6a2 A2ML metadata set."
+
+ecosystem:
+  depends_on:
+    - name: standards
+      role: "Constitutional governance, DEED/K9/launcher/provisioning specs, and reusable CI workflows"
+    - name: proven-tests-and-benches
+      role: "18-category by 14-aspect testing taxonomy, provenance tiers, and R10 canonical-wrongness doctrine"
+    - name: panic-attack
+      role: "Static assailant and security/bug signature scanner in CI"
+    - name: pons-asinorum
+      role: "Foundational proof/structural bridge scanner in CI"
+  related:
+    - name: launch-scaffolder
+      role: "App launcher standard v0.6.0 and per-app launcher praxis deed conventions"
+    - name: marid
+      role: "Incubating Julia-first web/API framework evaluated for backend/client readiness"
+
+coordination:
+  completed:
+    - agent: arena-agent
+      area: "Vue 3 + Bun UI migration, real Befunge-93 torus VM, Zig FFI fix, DEED/K9 v1.2 migration, launcher v0.6.0, parallel Justfile, and ProvenTests suite"
+      completed: 2026-10-23
+  available:
+    - "Optional WebAssembly compilation of Zig C-ABI vault engine for in-browser side-by-side execution"
+    - "Additional custom puzzle playfield levels selectable from the Vue 3 UI"

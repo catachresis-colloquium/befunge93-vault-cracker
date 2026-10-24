@@ -1,0 +1,76 @@
+// SPDX-License-Identifier: MPL-2.0
+// Author: Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Marid Option-2 Companion Trial Contract
+:toc: macro
+:sectnums:
+
+toc::[]
+
+== Purpose
+
+`befunge93-vault-cracker` remains a self-contained client-first Vue 3 + Bun puzzle game,
+while exposing a **progressive-enhancement Option-2 companion seam** matching
+`metadatastician/marid`'s exact wire conventions (`MaridHTTPJSONExt.jl`, RFC 9457
+`application/problem+json`, and `@metadatastician/marid-client` SSE topic streams).
+
+This lets both repositories run a **real two-stage integration trial early**, without
+forcing premature architecture choices on `marid` (no forced `HTTP.jl 2.x` decision for
+Stage A, no premature ArangoDB/SQLite/Raft commitment, and honest `in_memory_ephemeral`
+storage labelling throughout).
+
+== Two-Stage Trial Boundary
+
+[cols="1,2,3"]
+|===
+| Stage | `marid` Capability Exercised | Behaviour in `befunge93-vault-cracker`
+
+| **Stage A (Immediate)**
+| `MaridIR` (`ServiceDescriptor`, `MethodDescriptor`) + `MaridCore` (`bind_service!`, `serve_json`) + `MaridStorage.InMemoryEngine` + RFC 9457 `application/problem+json`
+| `TelemetryPanel.vue` detects `marid-upstream`, verifies cracked passcodes (`POST /api/vault/runs`), displays RFC 9457 `ValidationError` diagnostics on invalid runs, and renders the ephemeral run ledger (`GET /api/vault/runs`).
+
+| **Stage B (Incremental)**
+| W3C SSE topic streaming (`GET /events?topic=vault.runs&last_event_id=<seq>`) with `sequence` replay and `marid.sync.resync_required` gap signalling
+| When `/api/marid/capabilities` advertises `stageBSseEvents: true`, the `"Subscribe SSE (vault.runs)"` toggle lights up automatically with zero frontend changes.
+|===
+
+== Canonical `MaridIR` Service Descriptor (Julia Side)
+
+A minimal `marid` trial example needs **zero changes to `befunge93-vault-cracker`**. Bind the
+following `ServiceDescriptor` on `MARID_PORT=6274`:
+
+[source,julia]
+----
+using MaridIR, MaridCore, MaridCodec, MaridTransport, MaridStorage
+
+const VAULT_COMPANION = ServiceDescriptor(
+    "VaultCompanion", "0.1.0",
+    TypeDescriptor[],
+    [
+        MethodDescriptor("GetCapabilities", "Empty", "CapabilitiesView";
+            route_path="/api/marid/capabilities", http_method="GET"),
+        MethodDescriptor("ListVerifiedRuns", "Empty", "VerifiedRunsLedger";
+            route_path="/api/vault/runs", http_method="GET"),
+        MethodDescriptor("SubmitVerifiedRun", "SubmitRunRequest", "SubmitRunReceipt";
+            route_path="/api/vault/runs", http_method="POST"),
+    ],
+)
+----
+
+If `/api/marid/capabilities` is omitted during early Stage A testing, `befunge93-vault-cracker`'s
+reverse proxy (`src/marid/local-trial-backend.js`) falls back to `GET /healthz` and truthfully
+synthesizes `{ backend: "marid-upstream", stageAUnaryJson: true, stageBSseEvents: false, storageMode: "in_memory_ephemeral" }`.
+When running against the built-in Bun shim, `/api/marid/capabilities` also reports
+`nativeOracle: { available: true, engine: "zig-c-abi", agreesWithJsVm: true }` via `src/marid/native-oracle.js` (`bun:ffi` -> `libbefunge93_vault_cracker.so`), displayed directly in `TelemetryPanel.vue`.
+
+== Running the Trial
+
+[source,bash]
+----
+# 1. Standalone mode (built-in Bun shim implementing Stage A + Stage B):
+just check-marid-seam
+just serve
+
+# 2. Live trial against a running Julia Marid companion on port 6274:
+MARID_TRIAL_URL=http://127.0.0.1:6274 just verify-marid-upstream a
+MARID_UPSTREAM_URL=http://127.0.0.1:6274 just serve
+----

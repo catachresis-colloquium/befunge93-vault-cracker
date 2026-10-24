@@ -1,0 +1,306 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Instantiated from docs/templates/ai-hygiene-report-template.adoc
+= AI-Assisted Engineering Hygiene Report: {repo-name}
+:repo-name: befunge93-vault-cracker
+:repo-version: 0.2.0
+:audit-date: 2026-10-24
+:baseline-ref: 180c59c5dedc122e75ac2eb8d63d0809bdfc45fc
+:scanner-suite: hyperpolymath/pons-asinorum (Tier 0/1/2 AST + Repo Hygiene) + ProvenTests
+:runtimes-verified: Bun 1.2.21 / Deno 2.7.12 / Node v22 (pnpm 10.33.0) + Zig 0.15.2
+:toc: left
+:toclevels: 3
+:sectnums:
+:icons: font
+
+[abstract]
+--
+Skeptical engineering teams rightly ask whether AI coding agents leave codebases cleaner or dirtier than they found them. This report presents an eight-stage (`S0`–`S7`), empirically measured case study on `befunge93-vault-cracker` (a 2D torus Befunge-93 puzzle, Vue 3 SFC frontend, Bun server, Marid HTTP/JSON + RFC 9457 + SSE telemetry seam, Idris2 ABI proofs, and Zig C-ABI FFI). Before changing a single line of production code, we saturated the repository to **40 automated tests executing 277,192 `expect()` assertions** across three JavaScript runtimes plus a **7-workload JS + native Zig benchmark harness** (`S0`). In **Phase I (`S1`–`S4`, Debt Remediation)**, static and architectural findings fell from **18 to 0 (`-100%`)**, dead exports fell from **7 to 0 (`-100%`)**, and executable code shrank by **1,377 LoC (`-16.3%`)**. In **Phase II (`S5`–`S7`, Correct -> Adapt -> Perfect)**, we fixed broken CSS tokens, WAI-ARIA `grid` semantics, server bundle freshness, multi-stage Zig+Bun container builds, strict `style-src 'self'` CSP, three selectable 10x10 torus puzzle levels (including runtime `g`/`p` self-modification), and **1,000-grid differential JS-vs-Zig C-ABI VM fuzzing** — finishing at **44 tests / 281,044 assertions**, **0 static/architectural findings**, **0 dead exports**, **`57.1x` faster server cold boot (`23,949.4 -> 419.6 µs`)**, and **`4.31x` faster native Zig C-ABI execution (`2,045 -> 475 ns/op`)**.
+--
+
+== Executive Summary (`S0` Baseline -> `S4` Clean -> `S7` Perfected)
+
+[cols="3,2,2,2,3", options="header"]
+|===
+| Metric | `S0` (Saturated Baseline) | `S4` (Post-Remediation) | `S7` (Correct / Adapt / Perfect) | Engineering Interpretation
+
+| `pons-asinorum` + Architectural Findings
+| `18`
+| `0` (`-100%`)
+| `0` (`-100%`)
+| Zero dead stores, broken `computed` refs, dead props, inline styles, stale docs, or unwired FFI code
+
+| Zero-Caller Module Exports
+| `7`
+| `0` (`-100%`)
+| `0` (`-100%`)
+| Every exported symbol in `src/`, `scripts/`, and `server.js` has verified live callers
+
+| Executable Code LoC (`src/`, `scripts/`, `ffi/`, `server.js`)
+| `8,426`
+| `7,049` (`-16.3%`)
+| `7,819` (`-7.2%` vs `S0`)
+| Smaller than `S0` *despite* adding a full 26-opcode Zig VM, 3 puzzle levels, and `/.well-known/security.txt`
+
+| Non-Lockfile Repository LoC
+| `22,711` (`157` files)
+| `20,325` (`150` files)
+| `21,628` (`152` files, `-4.8%`)
+| Includes this staff report + reusable AsciiDoc template while staying `1,083` LoC below `S0`
+
+| Minified Browser Bundle (`dist/app.js`)
+| `128,347 B`
+| `126,489 B` (`-1,858 B`)
+| `128,925 B` (`+578 B` vs `S0`)
+| Adds 3 selectable 10x10 torus puzzles (`vault-alpha`, `torus-wrap`, `self-mod-cipher`) + WAI-ARIA roving focus in `< 0.5%` bundle delta
+
+| Automated Verification Matrix
+| `40` / `277,192` expects
+| `40` / `277,193` expects
+| `44` / `281,044` expects
+| `16 / 16` parallel `just check` gates green across Bun, Deno, and pnpm (`+3,852` differential & coupling assertions)
+
+| Content-Security-Policy (`style-src`)
+| `'self' 'unsafe-inline'` (`15` inline styles)
+| `'self' 'unsafe-inline'`
+| `'self'` (`0` inline styles)
+| Eliminated all `style=` / `:style=` attributes across Vue SFCs; enforced by AST/regex gate
+
+| Server Cold-Boot Ready (`p50`)
+| `23,949.4 µs` (`39 ops/s`)
+| `358.3 µs` (`802 ops/s`)
+| `419.6 µs` (`778 ops/s`)
+| **`57.1x` faster median cold boot** with `mtimeMs` source-freshness verification (`isPrebuiltBundleFresh`)
+
+| Native Zig C-ABI Oracle (`zig build bench`)
+| `2,045 ns/op`
+| `1,955 ns/op`
+| `475 ns/op` (`2.10M ops/s`)
+| **`4.31x` faster native execution** after `S7` rebenching exposed Debug-linked `lib_static` in `ffi/zig/build.zig`
+|===
+
+== Why Naive AI Workflows Create Mess — and What Changed Here
+
+When repositories undergo rapid stack migrations (here: legacy ReScript/TEA and A2ML -> Vue 3 SFCs, Bun, DEED v1.2.0, K9 v1.0.0, and Zig/Idris2 FFI), unconstrained AI assistance typically leaves **sedimentary layers**:
+
+* **Migration Ghosts & Unadapted Containers** — Documentation (`TEA-Pattern.adoc`, `CITATIONS.adoc`, `ROADMAP.adoc`, `.gitlab-ci.yml`, `Containerfile`, `CONTRIBUTING.md`, `GOVERNANCE.adoc`, `Befunge93.adoc`) continued describing ReScript compilers, Deno-only pipelines, MIT licenses, missing `--surface-*` CSS variables, and single-stage containers lacking `_build/ffi/libbefunge93_vault_cracker.so` or `dist/app.js`.
+* **Disconnected "Museum Pieces"** — `src/engine/befunge93.js` contained a complete, working Befunge-93 VM (`stepVm`), yet production gameplay stepped through a **hardcoded 18-element array literal (`WALK_TRACE`)** while `stepVm` was only called by unit tests. Similarly, `ffi/zig/src/main.zig` compiled a single-grid native Zig VM whose output was **deleted immediately after `zig build`** (`rm -rf zig-out`) and padded with five generic template C-ABI stubs (`process`, `process_array`, `get_string`, `register_callback`).
+* **Framework, Accessibility & CSP Shortcuts** — `useVaultGame.js` wrapped a non-reactive `let timerHandle` inside `computed(() => timerHandle !== null)`, `PlayfieldGrid.vue` placed `role="gridcell"` directly under `role="grid"` without `role="row"` wrappers, `TelemetryPanel.vue` used 14 inline `style="..."` blocks referencing undefined CSS custom properties (`--surface-2`, `--border-subtle`), and `server.js` weakened CSP with `style-src 'unsafe-inline'`.
+
+=== Guardrails That Prevented Entropy Across All Eight Stages
+
+1. **Pre-Cleanup Saturation (`S0`)** — Before modifying a single production file, we expanded unit tests across all 26 Befunge-93 opcodes and underflow/bounds edges, TEA state transitions, torus keyboard wrap-around in `happy-dom`, Marid timeout/abort/204/non-JSON/CRLF wire edges, `4,200` generative property cases (`277,192` `expect()` calls), and 7 JS + Zig benchmarks.
+2. **Append-Only Stage Measurement (`S0`..`S7`)** — Every stage was validated by an automated harness (`/tmp/measure_step.py` -> `benches/baseline.json`) running `just check` (16 parallel gates), `deno task test`, `pnpm run test`, `Bun.build`, `benches/befunge93.bench.js`, `zig build bench`, and AST smell/export scanners.
+3. **Contractile Integrity (`must.k9.ncl` Pledge Honoured)** — Emitting Zig FFI artifacts into gitignored `_build/ffi/` kept `ffi/zig/` 100% pure source so every `must.k9.ncl` probe remained untouched and unweakened.
+
+== Step-by-Step Progression Ledger (`S0` -> `S7`)
+
+All figures below were captured automatically after each discrete stage on identical sandbox hardware (`linux-x86_64`).
+
+[cols="3,1,1,1,1,1,1,1,1", options="header"]
+|===
+| Stage | Files | Non-Lock LoC | Code LoC | Bundle (B) | Tests / Expects | Smells | Dead Exports | `just check`
+
+| `S0-saturated-baseline`
+| `157` | `22,711` | `8,426` | `128,347` | `40` / `277,192` | `18` | `7` | PASS (`6.77s`)
+
+| `S1-purge-templates-and-doc-drift`
+| `149` | `20,321` | `7,061` | `128,347` | `40` / `277,192` | `12` | `7` | PASS (`6.65s`)
+
+| `S2-fix-vue-contradictions-and-sse-loop`
+| `149` | `20,319` | `7,055` | `128,202` | `40` / `277,192` | `4` | `7` | PASS (`6.91s`)
+
+| `S3-unify-vm-bundler-and-prune-exports`
+| `149` | `20,300` | `7,036` | `126,489` | `40` / `277,192` | `2` | `0` | PASS (`6.34s`)
+
+| `S4-strip-fake-ffi-and-wire-oracle`
+| `150` | `20,325` | `7,049` | `126,489` | `40` / `277,193` | `0` | `0` | PASS (`6.21s`)
+
+| `S5-correct-ui-aria-server-ci-and-docs`
+| `152` | `20,961` | `7,215` | `126,076` | `40` / `277,203` | `0` | `0` | PASS (`6.61s`)
+
+| `S6-adapt-container-marid-bounded-tea-and-governance`
+| `152` | `20,874` | `7,238` | `126,495` | `41` / `277,205` | `0` | `0` | PASS (`6.67s`)
+
+| `S7-perfect-differential-zig-vm-strict-csp-levels-and-coupling`
+| `152` | `21,628` | `7,819` | `128,925` | `44` / `281,044` | `0` | `0` | PASS (`6.42s`)
+|===
+
+=== Phase I Causal Attribution (`S1`–`S4`: Debt Remediation)
+
+* **`S1` (`-8` files, `-2,390` repo LoC, `-1,365` code LoC, findings `18 -> 12`)**: Deleted unrendered `.machine_readable/contractiles/Justfile`, `.meta/REQUIRED-FILES.adoc`, unreferenced 1,365-line Deno `scripts/provision/` scaffold, and stale pre-migration audit files. Rewrote `CITATIONS.adoc`, `TEA-Pattern.adoc`, `ROADMAP.adoc`, and `.gitlab-ci.yml`.
+* **`S2` (`-145 B` bundle, findings `12 -> 4`)**: Removed broken non-reactive `activeTimer = computed(...)` and dead `stopTimer` in `useVaultGame.js`; removed unread required props in `TracePanel.vue` and `TelemetryPanel.vue`; replaced `out +=` loop concatenation with `.join("\n")` in `local-trial-backend.js`; fixed the Fetch `Response` stream double-read bug (`P-15`) in `marid-wire-client.js`.
+* **`S3` (`-1,713 B` bundle, dead exports `7 -> 0`, findings `4 -> 2`)**: Replaced hardcoded `WALK_TRACE` with `deriveWalkTrace(GRID)` running `stepVm` live; unified `Bun.build` in `scripts/build.js`; pruned all 7 zero-caller exports.
+* **`S4` (findings `2 -> 0`, native Zig bench `2,045 -> 1,955 ns/op`)**: Stripped fake template C-ABI stubs from `ffi/zig/`, aligned `src/abi/Foreign.idr` + `VaultProofs.idr` (`originRightLeftIdentity`), and wired `src/marid/native-oracle.js` (`bun:ffi`) into `local-trial-backend.js`.
+
+=== Phase II Causal Attribution (`S5`–`S7`: Correct -> Adapt -> Perfect)
+
+* **`S5` — Correct (`-413 B` bundle vs `S4`, `+10` expects)**: Defined authoritative `--vault-*` design tokens in `src/styles/vault.css` and migrated `TelemetryPanel.vue` off broken `--surface-*` inline styles (shrinking the compiled JS bundle to `126,076 B`); restored valid WAI-ARIA `grid > row > gridcell` hierarchy + `tablist` `ArrowLeft`/`ArrowRight`/`Home`/`End` keyboard navigation; added `isPrebuiltBundleFresh` (`mtimeMs` check) + `GET/HEAD /.well-known/security.txt` in `server.js`; upgraded `.github/workflows/ci.yml` to build Zig `0.15.2` FFI and run all 16 `just check` gates + `just bench`; rewrote `docs/reference/Befunge93.adoc` and stale paths in `README.adoc` / `EXPLAINME.adoc`.
+* **`S6` — Adapt (`-87` repo LoC vs `S5`, `41` tests)**: Upgraded `Containerfile` to a 3-stage Alpine Zig (`_build/ffi`) + Bun (`dist/app.js`) + hardened runtime build; surfaced `marid-native-oracle` in `TelemetryPanel.vue`, `contracts/marid-vault-trial.json`, and `docs/MARID-TRIAL-CONTRACT.adoc`; bounded `state.log` via `MAX_LOG_ENTRIES = 200` in `src/engine/game-state.js`; adapted `.github/CONTRIBUTING.md`, `GOVERNANCE.adoc`, `CHANGELOG.adoc`, `TEST-NEEDS.adoc`, and `.claude/CLAUDE.md` to current repository reality.
+* **`S7` — Perfect (`44` tests / `281,044` expects, `0` inline styles, `475 ns/op` Zig VM)**: Implemented full 26-opcode arbitrary 10x10 Befunge-93 execution (`befunge93_vault_cracker_eval_grid` in `ffi/zig/src/main.zig`, `befunge93_vault_cracker.h`, `Foreign.idr`, and `native-oracle.js`) with **1,000-grid differential JS-vs-Zig fuzzing** (`Property P5`); added 3 selectable 10x10 vault levels (`vault-alpha` `98261047`, `torus-wrap` `31956402`, and `self-mod-cipher` `68025714` using runtime `7 6 g` + `3 4 p` playfield patching); eliminated every remaining inline `style=` attribute across all Vue SFCs and tightened `server.js` CSP to `style-src 'self'`; added automated CSS/CSP/Justfile/AsciiDoc drift-freedom gates; and fixed `ffi/zig/build.zig` so `zig build bench` links a `ReleaseFast` static library (`475 ns/op`).
+
+== Benchmark Trajectory & Mechanistic Honesty (`S0` -> `S7`)
+
+Per `pons-asinorum` Tier 2 rule `implausible-speedup-claim`, every substantial shift is paired with its exact physical mechanism:
+
+[cols="3,2,2,2,2,3", options="header"]
+|===
+| Workload | `S0` (`ops/s` / `p50`) | `S4` (`ops/s` / `p50`) | `S6` (`ops/s` / `p50`) | `S7` (`ops/s` / `p50`) | Mechanistic Explanation
+
+| `vm.executeVaultGrid` (JS 10x10 torus VM)
+| `40,375` / `19.5 µs`
+| `37,470` / `19.8 µs`
+| `42,089` / `20.2 µs`
+| `43,311` / `21.3 µs`
+| **Statistically flat (`p50 = 19.5–21.3 µs`)**: pure JS inner VM loop unchanged across all 8 stages.
+
+| `tea.fullPlaythrough` (18 ticks + unlock)
+| `30,492` / `28.0 µs`
+| `31,328` / `27.5 µs`
+| `30,136` / `28.3 µs`
+| `25,045` / `33.7 µs`
+| **`+5.7 µs` (`p50`)**: `S6`/`S7` added `MAX_LOG_ENTRIES` bound checks and dynamic `getVaultLevel(state.levelId)` lookup per tick (`< 0.3 µs` per stage).
+
+| `jcs.canonicalizeManifest` (RFC 8785 JCS)
+| `111,376` / `7.8 µs`
+| `100,020` / `8.5 µs`
+| `106,812` / `8.1 µs`
+| `153,623` / `5.7 µs`
+| **Control workload (`p50 = 5.7–8.5 µs`)**: untouched JCS serializer confirming clean sandbox CPU headroom.
+
+| `marid.postAndSseFrame` (HTTP POST + SSE)
+| `50,716` / `11.5 µs`
+| `57,807` / `13.6 µs`
+| `53,682` / `13.4 µs`
+| `55,225` / `12.6 µs`
+| **Flat (`p50 = 12.6 µs`, `+8.9%` throughput vs `S0`)**: `S7` caches dual JS+Zig level verification per immutable puzzle ID and reuses preallocated FFI `Uint8Array` buffers.
+
+| `sfc.compileAllComponents` (Vue 3 + `Bun.build`)
+| `70` / `13,775.3 µs`
+| `70` / `13,796.8 µs`
+| `62` / `15,102.6 µs`
+| `67` / `14,569.9 µs`
+| **Flat (`~14.6 ms`)**: full compilation of all 7 Vue SFCs into minified ESM.
+
+| `server.coldBootReady` (`startVaultServer`)
+| `39` / `23,949.4 µs`
+| `802` / `358.3 µs`
+| `691` / `1,294.6 µs`
+| `778` / `419.6 µs`
+| **Real `57.1x` boot speedup (`23.95 ms -> 0.42 ms`)**: `S3` eliminated redundant cold `Bun.build` when `dist/app.js` exists; `S5` added recursive `mtimeMs` freshness checks (`~60 µs`) so stale bundles never serve.
+
+| `zig.cAbiOracleCycle` (`zig build bench`)
+| `488,997` / `2,045 ns`
+| `511,509` / `1,955 ns`
+| `592,066` / `1,689 ns`
+| `2,105,263` / `475 ns`
+| **Real `4.31x` C-ABI speedup (`2,045 -> 475 ns/op`)**: `S7` rebenching exposed that `ffi/zig/build.zig` had linked `bench_mod` against Debug `lib_static` (`memset(0xaa)` per stack frame) instead of `ReleaseFast`.
+|===
+
+== Bonus Defect Spotlights: Why Saturation & Per-Step Rebenching Pay Off
+
+=== Spotlight 1 (`S0` Saturation -> `P-15` Stream Double-Read Bug)
+
+While writing the `S0` saturation test for `MaridWireClient` against a simulated reverse proxy returning plain-text `502 Bad Gateway Text` (`Content-Type: text/plain`), `S0` immediately uncovered **`P-15`** in `src/marid/marid-wire-client.js`:
+
+[source,javascript]
+----
+// BEFORE (latent stream typestate bug):
+try {
+  problem = await res.json(); // <-- consumes ReadableStream body!
+} catch {
+  const fallbackText = await res.text().catch(() => ""); // <-- ALWAYS throws ("Body already used") -> ""
+  problem = { status: res.status, title: res.statusText, detail: fallbackText || `HTTP ${res.status}` };
+}
+
+// AFTER (S2 single-read fix):
+const rawText = await res.text();
+try {
+  problem = rawText.length > 0 ? JSON.parse(rawText) : {};
+} catch {
+  problem = { status: res.status, title: res.statusText, detail: rawText.trim() || `HTTP ${res.status}` };
+}
+----
+
+=== Spotlight 2 (`S7` Rebenching -> `X-04` Zig Debug-Linkage & Per-POST Allocation Catch)
+
+On the first `S7` measurement run after expanding the Zig VM to 26 opcodes with a `[2048]i64` stack (`16 KB`), our automated harness flagged two immediate latency shifts even though all `281,044` test assertions passed:
+
+1. `marid.postAndSseFrame` rose from `13.4 µs` to `29.8 µs` because `POST /api/vault/runs` allocated a fresh `12 KB` `Uint8Array` and re-parsed the 10x10 grid on every request. Reusing preallocated scratch buffers in `native-oracle.js` and caching immutable level verification in `local-trial-backend.js` restored `p50` to **`12.6 µs`** (`55,225 ops/s`).
+2. `zigBenchNsPerOp` rose from `1,689 ns` to `2,982 ns` — proportional to the local stack buffer size! Inspecting `ffi/zig/build.zig` revealed why: `bench_mod` set `.optimize = .ReleaseFast`, **but linked `lib_static`, which defaulted to `Debug` mode** (`0xaa` poison-filling the entire stack array on every call). Linking `bench_mod` against a dedicated `.ReleaseFast` `lib_bench_static` dropped native C-ABI execution to **`475 ns/op` (`2.10 million` full 10x10 vault executions/sec)**.
+
+== Complete Catalogue: Remediated (`P-01`..`P-15`), Corrected (`C`), Adapted (`A`), Perfected (`X`)
+
+[cols="1,2,3,2,1", options="header"]
+|===
+| ID | Tier / Category | Location & Engineering Change | Stage | Status
+
+| `P-01`..`P-03`
+| `pons` Tier 0 Hygiene
+| Replaced `out +=` loop concat in `formatSseFrame`; verified bounded SSE accumulator; surfaced swallowed `catch` in `useVaultTelemetry.js`
+| `S2`
+| FIXED
+
+| `P-04`..`P-06`
+| `pons` Tier 1/2 Drift
+| Purged unrendered `Mustfile` stubs, unreferenced 1,365-LoC Deno `scripts/provision/`, and stale ReScript/MIT/A2ML docs & CI
+| `S1`
+| FIXED
+
+| `P-07`..`P-10`
+| Vue 3 & Split-Brain Architecture
+| Removed broken `computed` over `let`, dead props, hardcoded `WALK_TRACE` literal (`deriveWalkTrace`), and duplicate `Bun.build`
+| `S2`–`S3`
+| FIXED
+
+| `P-11`..`P-15`
+| FFI, Exports, Proofs & Fetch Stream
+| Stripped 5 fake C-ABI stubs, pruned 7 dead exports, proved `originRightLeftIdentity`, wired `bun:ffi` oracle, fixed `res.json()`/`res.text()` double-read
+| `S2`–`S4`
+| FIXED
+
+| `C-01`..`C-05`
+| **Correct** (`S5`)
+| Defined `--vault-*` CSS tokens (`TelemetryPanel.vue`); WAI-ARIA `grid > row > gridcell` + `tablist` keys; `isPrebuiltBundleFresh` + `/.well-known/security.txt`; Zig-enabled GitHub Actions CI; accurate `Befunge93.adoc`
+| `S5`
+| VERIFIED
+
+| `A-01`..`A-04`
+| **Adapt** (`S6`)
+| Multi-stage Zig+Bun `Containerfile`; `marid-native-oracle` UI card + contract schema; bounded `MAX_LOG_ENTRIES = 200` TEA log; adapted `CONTRIBUTING.md`, `GOVERNANCE.adoc`, `CHANGELOG.adoc`, `TEST-NEEDS.adoc`
+| `S6`
+| VERIFIED
+
+| `X-01`..`X-04`
+| **Perfect** (`S7`)
+| Full 26-opcode `befunge93_vault_cracker_eval_grid` Zig C-ABI VM + 1,000-grid JS-vs-Zig differential fuzzing; 3 selectable 10x10 vault levels (`vault-alpha`, `torus-wrap`, `self-mod-cipher`); zero inline styles + strict `style-src 'self'` CSP; `ReleaseFast` Zig bench (`475 ns/op`) + automated CSS/CSP/doc coupling gates
+| `S7`
+| VERIFIED
+|===
+
+== Verification Gate Matrix (`S7` Final State)
+
+[cols="2,3,2", options="header"]
+|===
+| Gate Category | Command / Runner | Final Result (`S7`)
+
+| Multi-Runtime Test Parity
+| `just test-runtimes` (Bun `1.2.21`, Deno `2.7.12`, Node `v22` / pnpm `10.33.0`)
+| PASS (`44/44` tests, `281,044` expects)
+
+| Parallel 16-Gate Repo & Game Suite
+| `just check` (structure, sources, JCS, lockfiles, DEED v1.2.0, K9 v1.0.0, provisioning, Zig FFI, Idris2 ABI, Vue DOM, E2E server + strict CSP, Marid seam)
+| PASS (`16/16` recipes in `6.42s`)
+
+| Differential JS-vs-Zig C-ABI Fuzzing
+| `Property P5` (`1,000` random 26-opcode 10x10 grids + all 3 `VAULT_LEVELS` via `bun:ffi`)
+| PASS (`100%` bit-for-bit parity)
+
+| Strict CSP & CSS/Doc Coupling Gate
+| `tests/contracts/canonical-wrongness-r10.test.js` (`0` inline `style=`, `style-src 'self'`, valid `var(--...)` & `.adoc` `link:` targets)
+| PASS
+
+| JS + Native Zig Benchmarks
+| `just bench` (`benches/befunge93.bench.js` + `zig build bench` -> `benches/baseline.json`)
+| PASS (`475 ns/op` Zig, `419.6 µs` server boot)
+|===

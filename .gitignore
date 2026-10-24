@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
-# RSR-compliant .gitignore
+# RSR-compliant .gitignore for befunge93-vault-cracker
+# Note: `build/just/` contains tracked provisioning scripts; never ignore `build/`.
 
 # OS & Editor
 .DS_Store
@@ -10,53 +11,21 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Build
-/target/
-/_build/
-/build/
+# Generated Build & FFI Outputs
 /dist/
 /out/
+/target/
+/_build/
+/build-idris/
+/.eval/
+/ffi/zig/zig-out/
+/ffi/zig/.zig-cache/
 
-# Dependencies
+# Dependencies & Caches
 /node_modules/
 /vendor/
 /deps/
-/.elixir_ls/
-
-# Rust
-# Cargo.lock  # Keep for binaries
-
-# Elixir
-/cover/
-/doc/
-*.ez
-erl_crash.dump
-
-# Julia
-*.jl.cov
-*.jl.mem
-/Manifest.toml
-
-# ReScript
-/lib/bs/
-/.bsb.lock
-
-# Python (SaltStack only)
-__pycache__/
-*.py[cod]
-.venv/
-
-# Ada/SPARK
-*.ali
-/obj/
-/bin/
-
-# Haskell
-/.stack-work/
-/dist-newstyle/
-
-# Chapel
-*.chpl.tmp.*
+/.cache/
 
 # Secrets
 .env
@@ -65,26 +34,13 @@ __pycache__/
 *.key
 secrets/
 
-# Test/Coverage
+# Test/Coverage & Logs
 /coverage/
-htmlcov/
-
-# Logs
 *.log
 /logs/
 
-# Temp
+# Temp & Crash Capture
 /tmp/
 *.tmp
 *.bak
-
-# Crash recovery artifacts
 ai-cli-crash-capture/
-target/
-node_modules/
-_build/
-deps/
-.elixir_ls/
-.cache/
-build/
-dist/

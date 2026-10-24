@@ -1,0 +1,36 @@
+;; SPDX-License-Identifier: MPL-2.0
+;; SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+;;
+;; Per-app launcher descriptor for befunge93-vault-cracker.
+;; Canon: hyperpolymath/standards launcher/launcher-standard_praxis.deed (v0.6.0)
+;; and hyperpolymath/launch-scaffolder docs/per-app-launcher-descriptor-deed.adoc.
+
+(praxis-deed
+  :schema-version "1.0.0"
+  :canonical-name "befunge93-vault-cracker-launcher"
+  :beholding-chora #u5"estate/chora"
+  :id #u8"launcher:catachresis-colloquium/befunge93-vault-cracker"
+  :standard-version "0.6.0"
+
+  (app
+    :name "befunge93-vault-cracker"
+    :display-name "Befunge-93 Vault Cracker"
+    :archetype "app"
+    :categories '("Game" "LogicGame" "Development")
+    :summary "Interactive 2D Befunge-93 torus puzzle in Vue 3 and Bun")
+
+  (runtime
+    :runner "bun"
+    :entrypoint "server.js"
+    :host "0.0.0.0"
+    :port 8000
+    :health-path "/health"
+    :state-scope "xdg-runtime"
+    :uses-tmp #f
+    :shell-eval #f)
+
+  (modes
+    :runtime '("--start" "--stop" "--status" "--auto" "--browser" "--web")
+    :integration '("--integ" "--disinteg")
+    :provisioning '("--setup" "--doctor" "--heal" "--ai-setup")
+    :meta '("--help" "--version")))

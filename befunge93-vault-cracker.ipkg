@@ -1,0 +1,13 @@
+-- SPDX-License-Identifier: MPL-2.0
+package befunge93-vault-cracker
+
+version = 0.2.0
+sourcedir = "src/abi"
+authors = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
+license = "MPL-2.0"
+brief = "Formal Idris2 ABI and ProvenTests obligations for Befunge-93 Vault Cracker"
+
+modules = Abi.Types,
+          Abi.Layout,
+          Abi.Foreign,
+          Abi.VaultProofs

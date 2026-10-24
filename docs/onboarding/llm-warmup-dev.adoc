@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= LLM Warm-Up (Developer): Befunge-93 Vault Cracker
+
+Architecture summary:
+
+* `src/engine/befunge93.js` — Deterministic 2D torus Befunge-93 interpreter and canonical 10x10 vault grid.
+* `src/engine/game-state.js` — Pure functional TEA reducer (`createInitialModel`, `update`, `runSelfChecks`).
+* `src/composables/useVaultGame.js` — Vue 3 reactive composable with leak-free timer lifecycle.
+* `src/App.vue` & `src/components/*.vue` — Vue 3 SFCs compiled via `scripts/vue-sfc-plugin.js` (`vue/compiler-sfc`).
+* `ffi/zig/` & `src/abi/` — Native Zig C-ABI vault engine and Idris2 ABI/ProvenTests obligations.
+* Verification gate: `just check` runs all structural, DEED, K9, JCS, unit, DOM, property, R10 wrongness, E2E, and FFI suites in parallel.

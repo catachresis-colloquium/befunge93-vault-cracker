@@ -1,0 +1,9 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= LLM Warm-Up (Maintainer): Befunge-93 Vault Cracker
+
+Maintainer invariants (`coordination.k9` & `.machine_readable/contractiles/must/must.k9.ncl`):
+
+* Zero `.a2ml`, `.ts`, `.tsx`, `.res`, or `package-lock.json` files anywhere in the tree.
+* `package.json` must remain RFC 8785 JCS canonical (`bun scripts/jcs-canon.js --check package.json`) with synchronized `bun.lock`, `deno.lock`, and `pnpm-lock.yaml`.
+* All `.deed` files must pass `bun scripts/deed_lint.js`; `coordination.k9` must pass `bun scripts/validate-coordination-k9.js`; `.k9.ncl` files must pass `k9-validate.sh`.
+* All CI actions in `.github/workflows/` must stay 40-hex SHA-pinned with top-level `permissions:` and SPDX headers.

@@ -1,148 +1,86 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= Befunge-93 Reference
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= Befunge-93 Language & Vault Torus Reference
 :toc:
+:toclevels: 3
 
-== What is Befunge-93?
+== What Is Befunge-93?
 
-**Befunge-93** is an esoteric programming language created by Chris Pressey in 1993. It was designed to be as difficult to compile as possible.
+**Befunge-93** is a two-dimensional stack-based esoteric programming language created by Chris Pressey in 1993. Rather than executing source lines sequentially, an instruction pointer (`IP`) moves across a rectangular character torus in four cardinal directions (`>`, `<`, `^`, `v`), wraps modulo grid dimensions across every border, and can inspect (`g`) or rewrite (`p`) its own playfield at runtime.
 
-== Key Characteristics
+In `befunge93-vault-cracker`, Befunge-93 is **genuinely interpreted and executed** by two independent virtual machines:
 
-=== 2D Execution
+1. **Pure ESM JavaScript Torus VM** (`src/engine/befunge93.js`: `createVmState`, `stepVm`, `executeProgram`, and live `deriveWalkTrace`).
+2. **Native Zig C-ABI FFI VM** (`ffi/zig/src/main.zig`: `befunge93_vault_cracker_run_vault`, loaded at runtime via `bun:ffi` in `src/marid/native-oracle.js`).
 
-Unlike traditional languages where code executes line by line, Befunge executes on a 2D grid. The program counter (PC) can move in four directions:
+== Playfield Geometry & Totality Rules
 
-[source]
-----
-    ^
-    |
-<-- PC -->
-    |
-    v
-----
+Classic Befunge-93 runs on an `80 x 25` torus; each vault puzzle in this repository executes on a compact **`10 x 10` torus** (`TorusCoord = Fin 10` in `src/abi/Types.idr`) so the entire program is visible and keyboard-navigable (`role="grid"` with roving `tabindex`).
 
-Direction commands:
-- `>` - Move right
-- `<` - Move left
-- `^` - Move up
-- `v` - Move down
+To guarantee total, crash-free execution on arbitrary playfields (verified across 4,200+ generative property cases):
 
-=== The Playfield
+* **Coordinate wrap-around**: Advancing from `(row, col)` by `(dr, dc)` computes `(((row + dr) % H) + H) % H` and `(((col + dc) % W) + W) % W`.
+* **Empty-stack underflow**: Popping an empty stack returns `0` rather than throwing.
+* **Division & modulo by zero**: `/` and `%` return `0` when the divisor (`a`) is `0` (`Math.trunc(b / a)` otherwise).
+* **Out-of-bounds `g` / `p`**: `g` pushes `0` when `(y, x)` lies outside the grid; `p` ignores out-of-bounds writes cleanly.
+* **Bounded step budget**: `executeProgram(grid, { maxSteps })` halts deterministically even on infinite torus loops.
 
-The playfield is exactly 80 columns by 25 rows (classic terminal dimensions). Code wraps around edges.
+== Canonical 10x10 Vault Grid Walkthrough (`98261047`)
 
 [source]
 ----
-+------------------80 columns------------------+
-|                                              |
-|    v < Your code lives here > ^              |
-|                                              |
-25 rows                                        |
-|                                              |
-+----------------------------------------------+
+Col: 0123456789
+R0:  0"7401"v      <- Push sentinel 0, stringmode push '7','4','0','1' (55,52,48,49), turn down at (0,7)
+R1:  v"9826"< \    <- Turn left at (1,7), stringmode push '6','2','8','9' (54,50,56,57), turn down at (1,0)
+R2:  >   v         <- Route east at (2,0) to (2,4), then drop into drain loop
+R3:  ^   :         <- Duplicate top of stack at (3,4)
+R4:  ^  ,_$   v    <- '_' branches left if non-zero -> ',' emits ASCII digit -> '^' loops via R2;
+R5:   #======#        when sentinel 0 is reached, '_' branches right -> '$' clears 0 -> 'v' at (4,9)
+R6:   |VAULT!|
+R7:   |93-TEA|
+R8:   #======#
+R9:           @    <- East vault shaft descends (4,9)..(9,9) and halts cleanly on '@'
 ----
 
-=== Stack-Based
+Because LIFO stack pushes `"7401"` followed by `"6289"` leave `[0, 55, 52, 48, 49, 54, 50, 56, 57]` on the stack, the `,` drain loop pops and emits the eight bytes in LIFO order: **`98261047`** (`EXPECTED_PASSCODE`), clears the `0` sentinel via `$`, and halts at `(9, 9)` with an empty stack.
 
-All operations work on a LIFO (Last In, First Out) stack:
+== Complete Supported Instruction Set (26 Opcodes)
+
+[cols="1,2,4", options="header"]
+|===
+| Opcode | Category | Semantics in `befunge93.js` & `ffi/zig/src/main.zig`
+
+| `0`–`9` | Literal | Push integer `0`..`9` onto stack
+| `"` | Stringmode | Toggle ASCII stringmode (push char codes until matching `"`)
+| `>` `<` `^` `v` | Routing | Set IP direction right, left, up, or down
+| `?` | Routing | Set IP direction via injectable RNG (falls back deterministically to `steps % 4`)
+| `+` `-` `*` | Arithmetic | Pop `a`, pop `b`, push `b + a`, `b - a`, or `b * a`
+| `/` `%` | Arithmetic | Pop `a`, pop `b`; if `a == 0` push `0`, else push `trunc(b / a)` or `b % a`
+| `!` | Logic | Pop `a`; push `1` if `a == 0` else `0`
+| `` ` `` | Comparison | Pop `a`, pop `b`; push `1` if `b > a` else `0`
+| `_` | Horizontal branch | Pop `a`; move `right` if `a == 0`, else `left`
+| `\|` | Vertical branch | Pop `a`; move `down` if `a == 0`, else `up`
+| `:` | Stack | Duplicate top of stack (`0` pushes `[0, 0]` on empty stack)
+| `\` | Stack | Swap top two stack values
+| `$` | Stack | Pop and discard top of stack
+| `.` | Integer output | Pop `a` and append `String(a) + " "` to output
+| `,` | ASCII output | Pop `a` and append `String.fromCharCode(a & 0xff)` to output
+| `#` | Bridge | Trampoline — skip the next cell along current IP direction
+| `g` | Reflection | Pop `y`, pop `x`; push ASCII code at `grid[y][x]` (or `0` if out of bounds)
+| `p` | Self-modification | Pop `y`, pop `x`, pop `v`; write `char(v & 0xff)` into `grid[y][x]`
+| `&` `~` | Input stubs | Treated as pure no-ops in deterministic non-interactive execution
+| `@` | Halt | Terminate program execution immediately
+|===
+
+== Canonical Hello World Example (80x25 Standard Befunge-93)
 
 [source]
 ----
-Push 3:     [] -> [3]
-Push 5:     [3] -> [3, 5]
-Add:        [3, 5] -> [8]
+0"!dlroW ,olleH">:#,_@
 ----
 
-=== Self-Modifying
+== External References
 
-The `p` (put) command can modify the playfield during execution. This makes Befunge extremely difficult to compile ahead of time.
-
-== Instruction Set
-
-=== Arithmetic
-
-[cols="1,3"]
-|===
-| Instruction | Description
-
-| `+` | Pop a and b, push a+b
-| `-` | Pop a and b, push b-a
-| `*` | Pop a and b, push a*b
-| `/` | Pop a and b, push b/a (integer division)
-| `%` | Pop a and b, push b%a (modulo)
-|===
-
-=== Stack Manipulation
-
-[cols="1,3"]
-|===
-| Instruction | Description
-
-| `0-9` | Push digit (0-9) onto stack
-| `:` | Duplicate top of stack
-| `\` | Swap top two values
-| `$` | Pop and discard top value
-|===
-
-=== I/O
-
-[cols="1,3"]
-|===
-| Instruction | Description
-
-| `.` | Pop and output as integer
-| `,` | Pop and output as ASCII character
-| `&` | Read integer from input
-| `~` | Read character from input
-|===
-
-=== Control Flow
-
-[cols="1,3"]
-|===
-| Instruction | Description
-
-| `>` | Move right
-| `<` | Move left
-| `^` | Move up
-| `v` | Move down
-| `?` | Move in random direction
-| `_` | Pop; if zero, go right; else go left
-| `\|` | Pop; if zero, go down; else go up
-| `#` | Skip next cell (trampoline)
-| `@` | End program
-|===
-
-=== Self-Modification
-
-[cols="1,3"]
-|===
-| Instruction | Description
-
-| `g` | Pop y and x, push value at (x,y)
-| `p` | Pop y, x, and v; write v at (x,y)
-|===
-
-== Example: Hello World
-
-[source]
-----
->              v
-v  ,,,,,"Hello"<
->48telerator*,v
-v,,,,,,"World!"<
->25telerator*,@
-----
-
-== Why Use Befunge-93 in This Project?
-
-This project uses Befunge-93 **purely as a satirical element**. The decorative "Befunge underpinning" ASCII art represents the absurdity of claiming a 1993 esoteric language could defeat modern cryptography.
-
-No actual Befunge code is interpreted or executed.
-
-== Resources
-
-* https://esolangs.org/wiki/Befunge[Befunge on Esolang Wiki]
-* https://catseye.tc/node/Befunge-93.html[Catseye Befunge-93]
-* https://github.com/catseye/Befunge-93[Befunge-93 Reference Implementation]
+* https://esolangs.org/wiki/Befunge[Befunge on the Esolang Wiki]
+* https://catseye.tc/node/Befunge-93.html[Cat's Eye Technologies — Befunge-93 Specification]
+* https://github.com/catseye/Befunge-93[Chris Pressey's Reference Befunge-93 Distribution]

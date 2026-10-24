@@ -1,0 +1,120 @@
+# SPDX-License-Identifier: MPL-2.0
+name: CI — System, Vue Game, Zig FFI & Multi-Runtime
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  deed-and-k9-conformance:
+    name: DEED v1.2.0, K9 v1.0.0 & JCS Conformance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.4.2"
+
+      - name: Install Just 1.59.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download 1.59.0 --repo casey/just --pattern "just-1.59.0-x86_64-unknown-linux-musl.tar.gz" --dir "$RUNNER_TEMP"
+          echo "409044617b6f06517c1035e55ca38c8c856ff8b650e41bc2aa1ef82d5903a23e  $RUNNER_TEMP/just-1.59.0-x86_64-unknown-linux-musl.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/just-1.59.0-x86_64-unknown-linux-musl.tar.gz" -C "$RUNNER_TEMP" just
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Validate RFC 8785 JCS manifests
+        run: bun scripts/jcs-canon.js --check package.json examples/web-project-bun.json contracts/marid-vault-trial.json benches/baseline.json
+
+      - name: Validate DEED v1.2.0 files
+        run: >
+          bun scripts/deed_lint.js
+          befunge93-vault-cracker_chora.deed
+          .machine_readable/0-AI-MANIFEST.deed
+          .machine_readable/descriptiles/provisioning_praxis.deed
+          .machine_readable/descriptiles/befunge93-vault-cracker.launcher_praxis.deed
+
+      - name: Validate coordination.k9 v1.2.0 & K9 v1.0.0 contractiles
+        run: |
+          bun scripts/validate-coordination-k9.js coordination.k9
+          bash scripts/k9/tools/k9-validate.sh .machine_readable/svc/k9/vault-cracker-svc.k9.ncl .machine_readable/contractiles/*/*.k9.ncl
+
+      - name: Audit Provisioning Set & Launcher v0.6.0
+        run: |
+          chmod +x launcher.sh
+          bash build/just/provision-check.sh .
+
+  vue-game-and-benchmarks:
+    name: Vue 3 + Bun System, Game & Benchmark Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.4.2"
+
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@abea47f85e598557f500fa1fd2ab7464fcb39406 # v2.2.1
+        with:
+          version: 0.15.2
+
+      - name: Frozen install, native Zig oracle build & production bundle build
+        run: |
+          bun install --frozen-lockfile
+          (cd ffi/zig && zig build -Doptimize=ReleaseSafe --cache-dir ../../_build/ffi-cache -p ../../_build/ffi)
+          bun run build
+
+      - name: System shell validations
+        run: |
+          bash tests/validate_structure.sh
+          bash tests/validate_sources.sh
+          bash tests/validate_examples.sh
+
+      - name: ProvenTests unit, Vue DOM, property (4,200+ cases), R10 & E2E suites
+        run: |
+          chmod +x launcher.sh
+          bun test
+
+      - name: Benchmark p95 latency gate
+        run: bun run bench
+
+  zig-ffi:
+    name: Zig C-ABI FFI Build, Tests & Microbench
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@abea47f85e598557f500fa1fd2ab7464fcb39406 # v2.2.1
+        with:
+          version: 0.15.2
+
+      - name: Build, test & benchmark native C-ABI vault FFI
+        run: |
+          bash tests/validate_ffi.sh
+          cd ffi/zig && zig build bench && rm -rf zig-out .zig-cache
+
+  js-runtimes:
+    name: Multi-Runtime Gate (Bun + Deno + pnpm)
+    uses: hyperpolymath/standards/.github/workflows/js-runtimes-reusable.yml@c6d78606f3928c22c3b0bdc6f5f5b47b96e05a5d

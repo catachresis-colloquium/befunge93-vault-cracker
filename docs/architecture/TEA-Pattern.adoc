@@ -1,173 +1,27 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= TEA Pattern Architecture
+// Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= TEA Pattern Architecture (Vue 3 + Bun)
 :toc:
 
 == Overview
 
-This project implements **The Elm Architecture (TEA)** pattern in JavaScript for React. TEA is a simple and elegant pattern for building web applications with predictable state management.
+`befunge93-vault-cracker` implements **The Elm Architecture (TEA)** as a pure, total JavaScript reducer in `src/engine/game-state.js` paired with a single thin Vue 3 composable (`src/composables/useVaultGame.js`) and six `<script setup>` Single-File Components (`src/components/*.vue`).
 
-NOTE: The source file uses a `.res` extension but contains standard JavaScript/JSX. This is intentional parody nomenclature.
+== Core Dataflow (`Model -> Message -> Model`)
 
-== Components
+=== Immutable Model (`createInitialModel`)
 
-=== Model
+`createInitialModel()` returns a plain immutable state snapshot (`tab`, `running`, `completed`, `tempo`, `stage`, `ip`, `dir`, `stack`, `output`, `passcodeInput`, `passcodeStatus`, `attempts`, `matchedPrefixDigits`, `selectedCell`, `visitedKeys`, `selfChecksPassed`, `selfCheckReport`, `log`) with 5 structural and VM equivalence invariants verified immediately at boot.
 
-The `Model` object defines the complete application state:
+=== Pure Reducer (`update(state, msg)`)
 
-[source,javascript]
-----
-const mkModel = () => ({
-  route: "vault",        // Current view (vault, telemetry, about)
-  running: false,        // Is the "attack" animation running?
-  stage: 0,              // Current attack stage (0-18)
-  tick: 0,               // Animation tick counter
-  layers: mkLayers(),    // Vault security layers
-  logs: [],              // Console log messages
-  babbleMode: true,      // Show tech babble?
-  speedMs: 200,          // Animation speed in milliseconds
-  wasmMode: false        // "WASM acceleration" toggle (cosmetic)
-});
-----
+Every UI event dispatches a plain message object (`SetTab`, `Start`, `Pause`, `Reset`, `SetTempo`, `Tick`, `Step`, `SelectCell`, `InputPasscode`, `SubmitPasscode`, `RunSelfCheck`) into `update(state, msg)`:
 
-=== Messages (Action Types)
+* Zero timers, network requests, or DOM mutations occur inside `update`.
+* Unknown or out-of-range messages return `state` unchanged by reference.
+* Stage 18 marks `completed: true` and `running: false` atomically on the 18th transition.
 
-Messages represent all possible state transitions:
+=== Controlled Effect Boundary (`useVaultGame` & `useVaultTelemetry`)
 
-[source,javascript]
-----
-// Action types
-const NAV = "NAV";           // Navigate to a different view
-const TOGGLE_RUN = "TOGGLE_RUN";  // Start/pause the animation
-const RESET = "RESET";       // Reset to initial state
-const TICK = "TICK";         // Animation tick
-const TOGGLE_BABBLE = "TOGGLE_BABBLE";  // Toggle tech babble
-const SPEED = "SPEED";       // Change animation speed
-const TOGGLE_WASM = "TOGGLE_WASM";  // Toggle "WASM mode"
-----
-
-=== Update Function (Reducer)
-
-The `reducer` function is a pure function that takes the current model and an action, returning a new model:
-
-[source,javascript]
-----
-function reducer(model, action) {
-  switch (action.type) {
-    case NAV:
-      return { ...model, route: action.route };
-    case TOGGLE_RUN:
-      return { ...model, running: !model.running };
-    case RESET:
-      return mkModel();
-    case TICK:
-      return handleTick(model);
-    // ... etc
-    default:
-      return model;
-  }
-}
-----
-
-=== View
-
-The view is a pure function of the model, rendering React components:
-
-[source,javascript]
-----
-function VaultCracker() {
-  const [model, dispatch] = useReducer(reducer, null, mkModel);
-
-  return (
-    <div className="wrap">
-      <VaultPanel layers={model.layers} />
-      <ConsolePanel logs={model.logs} />
-      <Controls dispatch={dispatch} running={model.running} />
-    </div>
-  );
-}
-----
-
-== Data Flow
-
-[source]
-----
-+-----------------------------------------------------------+
-|                         User                               |
-+-----------------------------------------------------------+
-                           |
-                           | User interactions
-                           v
-+-----------------------------------------------------------+
-|                        View                                |
-|   React components render based on Model                   |
-|   Button clicks dispatch action objects                    |
-+-----------------------------------------------------------+
-                           |
-                           | dispatch({ type: ACTION })
-                           v
-+-----------------------------------------------------------+
-|                       Reducer                              |
-|   Pure function: (Model, Action) => Model                  |
-|   No side effects, predictable                             |
-+-----------------------------------------------------------+
-                           |
-                           | new Model
-                           v
-+-----------------------------------------------------------+
-|                     React State                            |
-|   useReducer holds the Model                               |
-|   Re-renders View when Model changes                       |
-+-----------------------------------------------------------+
-----
-
-== Benefits
-
-1. **Predictable**: All state changes go through the reducer
-2. **Debuggable**: Easy to log all actions and state transitions
-3. **Testable**: The reducer is a pure function, trivial to unit test
-4. **Time Travel**: Can replay action history to reconstruct any state
-
-== Animation Loop
-
-The animation uses `useEffect` with `setInterval` to dispatch `TICK` actions:
-
-[source,javascript]
-----
-useEffect(() => {
-  if (!model.running) return;
-  const id = setInterval(() => {
-    dispatch({ type: TICK });
-  }, model.speedMs);
-  return () => clearInterval(id);
-}, [model.running, model.speedMs]);
-----
-
-Each `TICK` advances the attack by one step:
-
-1. **Stage 0-2**: Target, melt, and breach the first layer
-2. **Stage 3-5**: Target, melt, and breach the second layer
-3. ... and so on for all 6 layers
-4. **Stage 18+**: Attack complete
-
-== Error Handling
-
-The entire UI is wrapped in an `ErrorBoundary` component:
-
-[source,javascript]
-----
-<ErrorBoundary fallback={<ErrorFallback />}>
-  <VaultCracker />
-</ErrorBoundary>
-----
-
-If any error occurs, the UI recovers gracefully and displays an error message.
-
-== Why TEA in JavaScript?
-
-While TEA is native to Elm and commonly used with AffineScript, this project demonstrates that the pattern works beautifully in vanilla JavaScript with React's `useReducer` hook. The core principles remain:
-
-* **Single source of truth**: One model object holds all state
-* **Unidirectional data flow**: View -> Action -> Reducer -> New Model -> View
-* **Pure updates**: Reducer functions have no side effects
-* **Explicit state transitions**: Every possible change is an explicit action type
+* `useVaultGame.js` holds `shallowRef(createInitialModel())` and attaches an interval timer **only** while `state.running === true`, cleaning up via `onScopeDispose`.
+* `useVaultTelemetry.js` isolates optional Option-2 `marid` network effects (unary I-JSON + RFC 9457 Problem Details + W3C SSE) outside the pure game reducer so offline/static play remains 100% self-contained.

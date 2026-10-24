@@ -1,0 +1,7 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+= LLM Warm-Up (User): Befunge-93 Vault Cracker
+
+Befunge-93 Vault Cracker is an interactive 2D esoteric-programming puzzle built with Vue 3 Single-File Components on Bun. Players step or animate an instruction pointer across a 10x10 Befunge-93 torus playfield to recover an 8-digit vault passcode (`98261047`) and unlock the vault.
+
+* Launch the game: `./launcher.sh --browser` or `just serve` (listens on `http://127.0.0.1:8000`).
+* Check setup health: `./launcher.sh --doctor`.

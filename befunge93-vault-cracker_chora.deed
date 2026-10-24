@@ -1,0 +1,78 @@
+;; SPDX-License-Identifier: MPL-2.0
+;; SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+;;
+;; Canonical repository deed for befunge93-vault-cracker.
+;; Consolidates the retired .machine_readable/6a2/*.a2ml metadata files
+;; (STATE, META, ECOSYSTEM, AGENTIC, NEUROSYM, PLAYBOOK) into formal DEED v1.2.0.
+
+(repo-deed
+  :schema-version "1.0.0"
+  :canonical-name "befunge93-vault-cracker"
+  :beholding-chora #u5"estate/chora"
+  :repo-uuid #u8"chora:catachresis-colloquium/befunge93-vault-cracker"
+  :updated "2026-10-23"
+
+  (identity
+    :name "befunge93-vault-cracker"
+    :owner "catachresis-colloquium"
+    :repo "catachresis-colloquium/befunge93-vault-cracker"
+    :version "0.2.0"
+    :license "MPL-2.0"
+    :synopsis "Interactive 2D Befunge-93 torus puzzle and TEA state-machine game in Vue 3 and Bun")
+
+  (clade
+    :id #u8"clade:esoteric-puzzle-game"
+    :primary "game-parody"
+    :secondary '("esoteric-vm" "tea-ui" "rsr-exemplar")
+    :lineage "Migrated from disguised React .res prototype to genuine Vue 3 SFCs on Bun with verified Zig C-ABI and Idris2 ABI")
+
+  (status
+    :phase active
+    :crg-grade "C"
+    :completion-percent 100
+    :ui-framework "vue-3.5"
+    :js-runtime "bun"
+    :ffi-runtime "zig"
+    :abi-language "idris2")
+
+  (maturity
+    :level beta
+    :since "2026-10-23")
+
+  (meta
+    :adr-001 "Replaced React JSX in .res disguise with genuine Vue 3 Single-File Components compiled via vue/compiler-sfc on Bun"
+    :adr-002 "Backed the 18-stage guided walk trace with a real deterministic 2D torus Befunge-93 interpreter and Zig C-ABI engine"
+    :adr-003 "Retired all .a2ml files in favour of formal .deed documents, root coordination.k9 v1.2.0, and K9 v1.0.0 contractile tridents"
+    :banned-patterns '("typescript" "rescript-disguise" "package-lock.json" "yarn.lock" "dockerfile" "makefile" "a2ml"))
+
+  (ecosystem
+    :role "Interactive esoteric-language puzzle and estate standards showcase"
+    :depends-on '("standards" "proven-tests-and-benches" "deed-ecosystem" "k9-ecosystem" "launch-scaffolder")
+    :integrates-with '("hypatia" "panic-attack" "pons-asinorum" "marid"))
+
+  (agentic
+    :coordination-file "coordination.k9"
+    :manifest-file ".machine_readable/0-AI-MANIFEST.deed"
+    :contractiles-dir ".machine_readable/contractiles"
+    :svc-dir ".machine_readable/svc/k9"
+    :check-command "just check"
+    :serve-command "just serve"
+    :launcher-command "./launcher.sh")
+
+  (neurosym
+    :symbolic-layer "Idris2 total torus coordinate proofs (src/abi/VaultProofs.idr) and deterministic Befunge-93 torus VM"
+    :heuristic-layer "Hypatia CI neural-symbolic scanning with panic-attack and pons-asinorum gates"
+    :invariants-verified #t)
+
+  (anchor
+    :semantic-authority "src/engine/befunge93.js"
+    :golden-path "just check"
+    :passcode-oracle "98261047")
+
+  (playbook
+    :verify "just check"
+    :serve "just serve"
+    :build "just build"
+    :bench "just bench"
+    :doctor "./launcher.sh --doctor"
+    :release-preflight "just check"))

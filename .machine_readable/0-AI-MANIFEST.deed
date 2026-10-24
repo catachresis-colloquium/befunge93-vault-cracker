@@ -1,0 +1,40 @@
+;; SPDX-License-Identifier: MPL-2.0
+;; SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+;;
+;; Canonical AI agent arrival manifest for befunge93-vault-cracker.
+;; Replaces the retired .machine_readable/6a2/0-AI-MANIFEST.a2ml file.
+
+(repo-deed
+  :schema-version "1.0.0"
+  :canonical-name "befunge93-vault-cracker-ai-manifest"
+  :beholding-chora #u5"estate/chora"
+  :repo-uuid #u8"ai-manifest:catachresis-colloquium/befunge93-vault-cracker"
+  :updated "2026-10-23"
+
+  (arrival
+    :canonical-repo-deed "befunge93-vault-cracker_chora.deed"
+    :coordination-protocol "coordination.k9"
+    :provisioning-deed ".machine_readable/descriptiles/provisioning_praxis.deed"
+    :launcher-deed ".machine_readable/descriptiles/befunge93-vault-cracker.launcher_praxis.deed"
+    :launcher-script "launcher.sh"
+    :read-first '("befunge93-vault-cracker_chora.deed" "coordination.k9" "README.adoc" "EXPLAINME.adoc"))
+
+  (locations
+    :ui-components "src/components"
+    :ui-composables "src/composables"
+    :vm-and-tea-engine "src/engine"
+    :marid-seam "src/marid"
+    :formal-abi "src/abi"
+    :zig-ffi "ffi/zig"
+    :contracts "contracts"
+    :contractiles ".machine_readable/contractiles"
+    :k9-svc ".machine_readable/svc/k9"
+    :tests "tests"
+    :benchmarks "benches"
+    :reports "docs/reports")
+
+  (session-protocol
+    :on-enter "Read befunge93-vault-cracker_chora.deed and coordination.k9 before modifying tracked files"
+    :before-commit "Run just check to execute all parallel structural, runtime, UI, FFI, contract, and security gates"
+    :zero-a2ml #t
+    :zero-ts-exemptions #t))

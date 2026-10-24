@@ -1,138 +1,63 @@
-# Clone the repository
+<!--
+SPDX-License-Identifier: CC-BY-SA-4.0
+Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+-->
+# Contributing to `befunge93-vault-cracker`
 
-git clone https://github.com/hyperpolymath/befunge93-vault-cracker.git
+## Getting Started
+
+```bash
+git clone https://github.com/catachresis-colloquium/befunge93-vault-cracker.git
 cd befunge93-vault-cracker
 
-# Using Guix (recommended for reproducibility)
+# Option A: Provision via Launcher v0.6.0 + mise
+./launcher.sh --setup
+./launcher.sh --doctor
+bun install --frozen-lockfile
 
-guix develop
+# Option B: Reproducible Guix time-machine shell
+guix time-machine -C channels.scm -- shell -m manifest.scm
+mise install
+bun install --frozen-lockfile
 
-# Or using toolbox/distrobox
+# Verify all 16 system & game-bit gates in parallel
+just check
+```
 
-toolbox create befunge93-vault-cracker-dev
-toolbox enter befunge93-vault-cracker-dev
-# Install dependencies manually
-
-# Verify setup
-
-just check   # or: cargo check / mix compile / etc.
-just test    # Run test suite
-
-### Repository Structure
+## Repository Structure
 
 ```text
 befunge93-vault-cracker/
-├── src/ # Source code (Perimeter 1-2)
-├── lib/ # Library code (Perimeter 1-2)
-├── extensions/ # Extensions (Perimeter 2)
-├── plugins/ # Plugins (Perimeter 2)
-├── tools/ # Tooling (Perimeter 2)
-├── docs/ # Documentation (Perimeter 3)
-│   ├── architecture/ # ADRs, specs (Perimeter 2)
-│   └── proposals/ # RFCs (Perimeter 3)
-├── examples/ # Examples (Perimeter 3)
-├── spec/ # Spec tests (Perimeter 3)
-├── tests/ # Test suite (Perimeter 2-3)
-├── .well-known/ # Protocol files (Perimeter 1-3)
-├── .github/ # GitHub config (Perimeter 1)
-│   ├── CONTRIBUTING.md # This file
-│   ├── ISSUE_TEMPLATE/
-│   └── workflows/
-├── CHANGELOG.md
-├── CODE_OF_CONDUCT.md
-├── GOVERNANCE.md
-├── LICENSE
-├── MAINTAINERS.md
-├── README.adoc
-├── SECURITY.md
-├── flake.guix # Guix flake (Perimeter 1)
-└── Justfile # Task runner (Perimeter 1)
+├── befunge93-vault-cracker_chora.deed   # Canonical DEED v1.2.0 repository deed
+├── coordination.k9                      # AI & maintainer coordination invariants
+├── src/                                 # Vue 3 SFCs, TEA engine, Marid seam & Idris2 ABI
+├── ffi/zig/                             # Native Zig C-ABI Befunge-93 VM, tests & bench
+├── scripts/                             # SFC compiler plugin, JCS, DEED & K9 validators
+├── tests/                               # Unit, Vue DOM, 4,200+ property, R10 & E2E suites
+├── benches/                             # JS + Zig benchmark suite & JCS stage ledger
+├── docs/                                # Architecture, Befunge-93, setup & hygiene reports
+├── .machine_readable/                   # DEED descriptiles & K9 v1.0.0 contractiles
+├── CHANGELOG.adoc                       # Release history
+├── CODE_OF_CONDUCT.adoc                 # Community conduct policy
+├── GOVERNANCE.adoc                      # Decision-making & maintainer governance
+├── MAINTAINERS.adoc                     # Active maintainer roster
+├── ROADMAP.adoc                         # Completed & horizon milestones
+├── SECURITY.adoc                        # Coordinated vulnerability disclosure
+└── Justfile                             # 18-verb provisioning & parallel check runner
 ```
 
-    ---
+## Mandatory Invariants (`coordination.k9` & `must.k9.ncl`)
 
-## How to Contribute
+1. **Language & Manifest Discipline** — Keep all UI and runtime code in Vue 3 SFCs (`src/**/*.vue`), pure ESM JavaScript (`.js`), Zig (`ffi/zig/`), Idris2 (`src/abi/`), and Nickel (`.ncl`). Never introduce `.ts`, `.tsx`, `.res`, `.a2ml`, `package-lock.json`, or `yarn.lock`.
+2. **RFC 8785 JCS Canonical JSON** — Run `just fmt` whenever editing `package.json`, `examples/web-project-bun.json`, `contracts/marid-vault-trial.json`, or `benches/baseline.json`, and keep `bun.lock`, `deno.lock`, and `pnpm-lock.yaml` synchronized.
+3. **Rule R10 Test Fixtures** — Never commit static malformed `.deed`, `.k9`, or broken-grid fixture files; construct negative test cases in memory at test runtime (`tests/contracts/canonical-wrongness-r10.test.js`).
+4. **Verification Gate** — Both `just check` and `just test-runtimes` must exit `0` before opening or updating a pull request.
 
-### Reporting Bugs
+## Reporting Bugs & Suggesting Features
 
-    **Before reporting**:
-    1. Search existing issues
-    2. Check if it's already fixed in `main`
-    3. Determine which perimeter the bug affects
+* Check [ROADMAP.adoc](../ROADMAP.adoc) and existing GitHub issues before opening a new report.
+* Never report security vulnerabilities in public issues — follow [SECURITY.adoc](../SECURITY.adoc).
 
-    **When reporting**:
+## Commit Messages & Signed Commits
 
-    Use the [bug report template](.github/ISSUE_TEMPLATE/bug_report.md) and include:
-
-    - Clear, descriptive title
-    - Environment details (OS, versions, toolchain)
-    - Steps to reproduce
-    - Expected vs actual behaviour
-    - Logs, screenshots, or minimal reproduction
-
-### Suggesting Features
-
-    **Before suggesting**:
-    1. Check the [roadmap](ROADMAP.md) if available
-    2. Search existing issues and discussions
-    3. Consider which perimeter the feature belongs to
-
-    **When suggesting**:
-
-    Use the [feature request template](.github/ISSUE_TEMPLATE/feature_request.md) and include:
-
-    - Problem statement (what pain point does this solve?)
-    - Proposed solution
-    - Alternatives considered
-    - Which perimeter this affects
-
-### Your First Contribution
-
-    Look for issues labelled:
-
-    - [`good first issue`](https://github.com/hyperpolymath/befunge93-vault-cracker/labels/good%20first%20issue) — Simple Perimeter 3 tasks
-    - [`help wanted`](https://github.com/hyperpolymath/befunge93-vault-cracker/labels/help%20wanted) — Community help needed
-    - [`documentation`](https://github.com/hyperpolymath/befunge93-vault-cracker/labels/documentation) — Docs improvements
-    - [`perimeter-3`](https://github.com/hyperpolymath/befunge93-vault-cracker/labels/perimeter-3) — Community sandbox scope
-
-    ---
-
-## Development Workflow
-
-### Branch Naming
-
-docs/short-description # Documentation (P3) test/what-added # Test
-additions (P3) feat/short-description # New features (P2)
-fix/issue-number-description # Bug fixes (P2) refactor/what-changed #
-Code improvements (P2) security/what-fixed # Security fixes (P1-2)
-
-
-### Commit Messages
-
-    We follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-type(scope): description
-
-Body: what changed and why.
-
-Footer: issue reference, e.g. Closes #123
-\[optional body\]
-
-\[optional footer\]
-
-### Signed commits
-
-Every commit that reaches the default branch must be signed; a ruleset refuses
-unsigned pushes. Estate policy:
-[SIGNING-POLICY](https://github.com/hyperpolymath/standards/blob/main/docs/SIGNING-POLICY.adoc).
-
-- **People and interactive agents** sign with an SSH key registered on GitHub
-  as a *signing* key (`gpg.format=ssh`, `user.signingkey=<key>.pub`,
-  `commit.gpgsign=true`). The committer email must be verified on that account.
-- **Apps, bots and workflows** never `git push` local commits. They write
-  through the API (`createCommitOnBranch` or the estate `signed-push` action)
-  so that GitHub signs each commit.
-- Merge PRs with **squash**. The ruleset checks every commit on the PR branch,
-  not just the result, so one unsigned commit blocks the merge. Re-create such a
-  branch with signed commits (`git cherry-pick -S`) and open a new PR.
-  Rebase-merge replays commits unsigned and is disabled.
+Follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `ci:`), and sign all commits reaching `main` per the estate [SIGNING-POLICY](https://github.com/hyperpolymath/standards/blob/main/docs/SIGNING-POLICY.adoc) (`gpg.format=ssh`, squash merges).
