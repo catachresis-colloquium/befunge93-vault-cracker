@@ -3,7 +3,7 @@
 = Befunge-93 Vault Cracker Roadmap
 :toc:
 
-== Current Status (`v0.2.0`)
+== Current Status (`v0.4.0`)
 
 * [x] Deterministic 10x10 2D torus Befunge-93 virtual machine (`src/engine/befunge93.js`)
 * [x] Pure functional TEA game reducer & boot invariant self-checks (`src/engine/game-state.js`)
@@ -11,18 +11,16 @@
 * [x] DEED v1.2.0, `coordination.k9` v1.2.0, K9 v1.0.0 contractiles, and v0.6.0 `launcher.sh`
 * [x] Idris2 `%default total` ABI + native Zig C-ABI vault oracle (`src/abi/`, `ffi/zig/`)
 * [x] Option-2 `metadatastician/marid` companion wire seam (Stage A unary/RFC 9457 + Stage B SSE)
+* [x] Live `metadatastician/marid` upstream conformance harness (12-case matrix: Stage A unary/RFC 9457, Stage B SSE replay/resync, O-1 Zig C-ABI oracle across all VAULT_LEVELS)
+* [x] Custom Vault Workshop: user-editable 10x10 vault grids with bounded step-budget verification
+* [x] Shareable deterministic seed challenges (RFC 8785 JCS + base64url challenge descriptors)
 
 == Next Milestones
 
-=== `v0.3.0` — Live `marid` Upstream Trial
+=== `v0.5.0` — Future Work
 
 * [ ] Run Stage A unary + RFC 9457 conformance trial against live Julia `MaridHTTPJSONExt.serve_json` (`MARID_UPSTREAM_URL=http://127.0.0.1:6274`)
-* [ ] Run Stage B W3C SSE replay/resync trial once `marid`'s `/events` stream seam lands
-
-=== `v0.4.0` — Custom Playfield Challenges
-
-* [ ] User-editable 10x10 Befunge-93 vault grids with bounded step-budget verification
-* [ ] Shareable deterministic seed challenges
+* [ ] 1000+ generative property tests across Bun/Deno/pnpm runtimes
 
 == Non-Goals
 

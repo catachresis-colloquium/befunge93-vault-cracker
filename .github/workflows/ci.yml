@@ -38,6 +38,12 @@ jobs:
           tar -xzf "$RUNNER_TEMP/just-1.59.0-x86_64-unknown-linux-musl.tar.gz" -C "$RUNNER_TEMP" just
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
 
+      - name: Install Nickel 1.18.0 (K9 L2 contractile typechecker)
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/nickel" "https://github.com/nickel-lang/nickel/releases/download/1.18.0/nickel-x86_64-linux"
+          chmod +x "$RUNNER_TEMP/nickel"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
       - name: Validate RFC 8785 JCS manifests
         run: bun scripts/jcs-canon.js --check package.json examples/web-project-bun.json contracts/marid-vault-trial.json benches/baseline.json
 
@@ -52,7 +58,7 @@ jobs:
       - name: Validate coordination.k9 v1.2.0 & K9 v1.0.0 contractiles
         run: |
           bun scripts/validate-coordination-k9.js coordination.k9
-          bash scripts/k9/tools/k9-validate.sh .machine_readable/svc/k9/vault-cracker-svc.k9.ncl .machine_readable/contractiles/*/*.k9.ncl
+          bash scripts/k9/tools/k9-validate.sh --strict --layer L2 .machine_readable/svc/k9/vault-cracker-svc.k9.ncl .machine_readable/contractiles/*/*.k9.ncl
 
       - name: Audit Provisioning Set & Launcher v0.6.0
         run: |
@@ -77,11 +83,19 @@ jobs:
         with:
           version: 0.15.2
 
+      - name: Install Idris2 (%default total ABI typechecker)
+        run: |
+          apt-get update -y
+          apt-get install -y idris2
+
       - name: Frozen install, native Zig oracle build & production bundle build
         run: |
           bun install --frozen-lockfile
           (cd ffi/zig && zig build -Doptimize=ReleaseSafe --cache-dir ../../_build/ffi-cache -p ../../_build/ffi)
           bun run build
+
+      - name: Idris2 %default total ABI & ProvenTests typecheck
+        run: idris2 --build befunge93-vault-cracker.ipkg
 
       - name: System shell validations
         run: |

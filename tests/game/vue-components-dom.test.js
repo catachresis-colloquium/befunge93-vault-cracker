@@ -162,7 +162,7 @@ describe("Vue 3 SFC Game System & Composable Lifecycle (Categories 2, 3, 7)", ()
       // Saturation: End, Home, ArrowLeft wraparound, and Re-run Self-Checks button
       tablist.dispatchEvent(new KeyboardEvent("keydown", { key: "End", bubbles: true }));
       await nextTick();
-      expect(host.querySelector("#panel-telemetry")).not.toBeNull();
+      expect(host.querySelector("#panel-workshop")).not.toBeNull();
 
       tablist.dispatchEvent(new KeyboardEvent("keydown", { key: "Home", bubbles: true }));
       await nextTick();
@@ -170,7 +170,7 @@ describe("Vue 3 SFC Game System & Composable Lifecycle (Categories 2, 3, 7)", ()
 
       tablist.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
       await nextTick();
-      expect(host.querySelector("#panel-telemetry")).not.toBeNull();
+      expect(host.querySelector("#panel-workshop")).not.toBeNull();
 
       // Switch to trace tab and invoke Re-run Self-Checks
       host.querySelector("#tab-trace").click();

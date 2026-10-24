@@ -4,6 +4,30 @@
 
 All notable changes to `befunge93-vault-cracker` are documented in this file.
 
+== [0.4.0] - 2026-10-24
+
+=== Changed
+
+* Bumped `package.json`, `Justfile`, `CHANGELOG.adoc`, and `ROADMAP.adoc` from `0.2.0` to `0.4.0`; all docs/manifests coupled at `version: 0.4.0`.
+* Extended `TABS` with `workshop`; wired `WorkshopPanel` + `WorkshopGrid` into `src/App.vue`; added workshop styles to `src/styles/vault.css`.
+
+=== Added
+
+* `scripts/verify-marid-trial.js` — 12-case `metadatastician/marid` contract-conformance matrix (Stage A unary/RFC 9457 Problem Details, Stage B SSE `Last-Event-ID` replay + `marid.sync.resync_required` recovery, O-1 differential Zig C-ABI oracle across all `VAULT_LEVELS`); green 12/12 against the local Bun shim.
+* `contracts/marid-vault-trial.json` — extended with `conformanceMatrix` (A-1..A-8, B-1..B-3, O-1), RFC 8785 JCS canonical.
+* `src/engine/workshop.js` — Custom Vault Workshop engine: 10x10 grid authoring/mutation validation, bounded `maxSteps` (1..10000), deterministic RFC 8785 JCS + base64url challenge descriptors (`makeWorkshopChallengeId`/`verifyWorkshopChallengeId`), JS VM vs native Zig C-ABI lockstep derivation (`deriveWorkshopTrace`).
+* `src/engine/game-state.js` — Workshop TEA mode actions (`EnterWorkshop`, `LeaveWorkshop`, `SetWorkshopCell`, `SetWorkshopGrid`, `SetWorkshopMaxSteps`, `DeriveWorkshopTrace`, `WorkshopTraceDerived`, `SetWorkshopTraceView`, `MakeWorkshopChallenge`, `VerifyWorkshopChallenge`).
+* `src/components/WorkshopGrid.vue` — ARIA grid authoring surface with roving tabindex, arrow-key torus navigation, glyph cycling via Enter/Space/double-click.
+* `src/components/WorkshopPanel.vue` — Workshop controls: derive trace, trace step-through slider, JS/Zig agreement badge, challenge mint/verify, passcode submit.
+* `tests/unit/game-state-workshop.test.js` — 22 Workshop TEA tests incl. R10 in-memory negative-mutant tests for challenge descriptors.
+* `tests/property/befunge93-properties.test.js` — saturation properties P6-P9: workshop mutation invariants (1,000 cases), challenge descriptor round-trip/tamper rejection (1,000 cases), workshop TEA invariant preservation (1,000 cases), differential JS-vs-Zig lockstep on random workshop grids (1,000 cases).
+
+=== Fixed
+
+* Resolved non-deterministic event ordering in `scripts/verify-marid-trial.js` Stage B setup (sentinel runs now correctly anchor ring tail at `[b-3, b-4, b-5, matrix-probe-a]`).
+* Made `native-oracle.js` import non-literal in `workshop.js` so `Bun.build target=browser` bundles cleanly (no `bun:ffi` leakage into client bundle).
+* Fixed `base64urlDecode` to return `Uint8Array` (not string) for `TextDecoder` compatibility on Bun.
+
 == [0.2.0] - 2026-10-24
 
 === Changed

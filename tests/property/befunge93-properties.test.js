@@ -10,11 +10,28 @@ import {
   createVmState,
   executeProgram,
   getVaultLevel,
+  GRID,
   stepVm,
 } from "../../src/engine/befunge93.js";
-import { createInitialModel, deriveProgress, update } from "../../src/engine/game-state.js";
+import {
+  createInitialModel,
+  deriveProgress,
+  update,
+} from "../../src/engine/game-state.js";
 import { evaluateGridWithNativeZig } from "../../src/marid/native-oracle.js";
 import { jcsSerialize } from "../../scripts/jcs-canon.js";
+import {
+  base64urlDecode,
+  deriveWorkshopTrace,
+  makeWorkshopChallengeId,
+  validateWorkshopGrid,
+  verifyWorkshopChallengeId,
+  VAULT_MODE,
+  WORKSHOP_MODE,
+  WORKSHOP_GLYPHS,
+  WORKSHOP_GRID_SIZE,
+  WORKSHOP_MAX_STEPS_CAP,
+} from "../../src/engine/workshop.js";
 
 /** Deterministic PRNG (Mulberry32) for reproducible 1,000+ generative cases. */
 function mulberry32(seed) {
@@ -146,7 +163,15 @@ describe("Generative Property-Based Suite >=1,000 cases/property (Categories 9 &
     for (let i = 0; i < 1000; i += 1) {
       const val = genVal(0);
       const once = jcsSerialize(val);
-      const twice = jcsSerialize(JSON.parse(once));
+      // Panic-attack hygiene: JCS output must always be valid I-JSON — guard the
+      // round-trip parse instead of assuming it cannot throw.
+      let roundTripped;
+      try {
+        roundTripped = JSON.parse(once);
+      } catch {
+        throw new Error(`JCS serializer produced non-parseable I-JSON: ${once}`);
+      }
+      const twice = jcsSerialize(roundTripped);
       expect(twice).toBe(once);
     }
   });
@@ -177,6 +202,148 @@ describe("Generative Property-Based Suite >=1,000 cases/property (Categories 9 &
       if (zigRes !== null) {
         expect(zigRes.halted).toBe(jsRes.halted);
         expect(zigRes.output).toBe(jsRes.output);
+      }
+    }
+  });
+
+  test("Property P6 (1,000 cases): every single-cell workshop mutation preserves 10x10 shape and valid glyph set", () => {
+    const glyphs = [...WORKSHOP_GLYPHS];
+    const baseGrid = GRID.map((row) => row.slice());
+
+    for (let caseIdx = 0; caseIdx < 1000; caseIdx += 1) {
+      const grid = baseGrid.map((row) => row.slice());
+      const r = Math.floor(Math.random() * WORKSHOP_GRID_SIZE);
+      const c = Math.floor(Math.random() * WORKSHOP_GRID_SIZE);
+      const glyph = glyphs[Math.floor(Math.random() * glyphs.length)];
+      grid[r][c] = glyph;
+
+      const { ok } = validateWorkshopGrid(grid);
+      expect(ok).toBe(true);
+      expect(grid.length).toBe(WORKSHOP_GRID_SIZE);
+      expect(grid.every((row) => row.length === WORKSHOP_GRID_SIZE)).toBe(true);
+      for (const row of grid) {
+        for (const cell of row) {
+          expect(WORKSHOP_GLYPHS.has(cell)).toBe(true);
+        }
+      }
+    }
+  });
+
+  test("Property P7 (1,000 cases): workshop challenge descriptor round-trips and rejects tampered grid/maxSteps", () => {
+    const rng = mulberry32(0xbf93_0006);
+    const glyphs = [...WORKSHOP_GLYPHS];
+
+    for (let caseIdx = 0; caseIdx < 1000; caseIdx += 1) {
+      const grid = Array.from({ length: WORKSHOP_GRID_SIZE }, () =>
+        Array.from({ length: WORKSHOP_GRID_SIZE }, () =>
+          glyphs[Math.floor(rng() * glyphs.length)],
+        ),
+      );
+      const maxSteps = 1 + Math.floor(rng() * WORKSHOP_MAX_STEPS_CAP);
+
+      const id = makeWorkshopChallengeId(grid, maxSteps);
+      expect(typeof id).toBe("string");
+      expect(id.length).toBeGreaterThan(0);
+      expect(/^[A-Za-z0-9_-]+$/.test(id)).toBe(true);
+
+      const verified = verifyWorkshopChallengeId(id, grid, maxSteps);
+      expect(verified.ok).toBe(true);
+      expect(verified.valid).toBe(true);
+
+      // Tampering one cell invalidates the descriptor.
+      const tampered = grid.map((row) => row.slice());
+      tampered[0][0] = tampered[0][0] === "@" ? " " : "@";
+      expect(verifyWorkshopChallengeId(id, tampered, maxSteps).valid).toBe(false);
+
+      // Tampering maxSteps invalidates the descriptor.
+      expect(verifyWorkshopChallengeId(id, grid, maxSteps + 1).valid).toBe(false);
+    }
+  });
+
+  test("Property P8 (1,000 cases): workshop TEA preserves invariants under random command streams", () => {
+    const rng = mulberry32(0xbf93_0007);
+    const glyphs = [...WORKSHOP_GLYPHS];
+
+    for (let seq = 0; seq < 1000; seq += 1) {
+      let state = createInitialModel();
+      state = update(state, { type: "EnterWorkshop" });
+
+      const randomAction = () => {
+        const pick = Math.floor(rng() * 9);
+        switch (pick) {
+          case 0:
+            return {
+              type: "SetWorkshopCell",
+              row: Math.floor(rng() * WORKSHOP_GRID_SIZE),
+              col: Math.floor(rng() * WORKSHOP_GRID_SIZE),
+              glyph: glyphs[Math.floor(rng() * glyphs.length)],
+            };
+          case 1:
+            return { type: "SetWorkshopMaxSteps", maxSteps: 1 + Math.floor(rng() * 5000) };
+          case 2:
+            return { type: "DeriveWorkshopTrace" };
+          case 3:
+            return { type: "MakeWorkshopChallenge" };
+          case 4:
+            return {
+              type: "VerifyWorkshopChallenge",
+              challengeId: state.workshop?.challengeId ?? "garbage",
+            };
+          case 5:
+            return { type: "SetWorkshopTraceView", index: Math.floor(rng() * 100) - 10 };
+          case 6:
+            return { type: "SelectCell", row: Math.floor(rng() * 12) - 1, col: Math.floor(rng() * 12) - 1 };
+          case 7:
+            return { type: "SetTab", tab: TABS[Math.floor(rng() * TABS.length)] };
+          default:
+            return { type: "BogusChaosEvent", payload: null };
+        }
+      };
+
+      const length = 5 + Math.floor(rng() * 30);
+      for (let i = 0; i < length; i += 1) {
+        state = update(state, randomAction());
+        if (state.mode === WORKSHOP_MODE) {
+          expect(state.workshop).not.toBeNull();
+          expect(state.workshop.grid.length).toBe(WORKSHOP_GRID_SIZE);
+          expect(state.workshop.maxSteps).toBeGreaterThanOrEqual(1);
+          expect(state.workshop.maxSteps).toBeLessThanOrEqual(WORKSHOP_MAX_STEPS_CAP);
+          expect(state.workshop.traceViewIndex).toBeGreaterThanOrEqual(0);
+        } else {
+          expect(state.mode).toBe(VAULT_MODE);
+        }
+        expect(state.workshop?.traceViewIndex).toBeLessThanOrEqual(
+          Math.max(0, (state.workshop?.trace.length ?? 1) - 1),
+        );
+      }
+    }
+  });
+
+  test("Property P9 (1,000 cases): differential JS VM vs native Zig C-ABI lockstep on workshop-authored random 10x10 grids", async () => {
+    const rng = mulberry32(0xbf93_0008);
+    const alphabet = '0123456789><^v?_|:+*-/%!`\\\\$.,#gp&~@\" ';
+
+    for (let caseIdx = 0; caseIdx < 1000; caseIdx += 1) {
+      const maxSteps = 10 + Math.floor(rng() * 100);
+      const grid = Array.from({ length: 10 }, () =>
+        Array.from({ length: 10 }, () => alphabet[Math.floor(rng() * alphabet.length)]),
+      );
+
+      const derived = await deriveWorkshopTrace(grid, maxSteps);
+      const jsRes = derived.jsResult;
+      expect(jsRes.steps).toBeLessThanOrEqual(maxSteps);
+      expect(typeof jsRes.output).toBe("string");
+
+      const zigRes = derived.zigResult;
+      if (zigRes !== null) {
+        expect(zigRes.steps).toBeLessThanOrEqual(maxSteps);
+        expect(zigRes.halted).toBe(jsRes.halted);
+        expect(zigRes.output).toBe(jsRes.output);
+        expect(derived.agreement).toBe(
+          zigRes.halted === jsRes.halted &&
+            zigRes.output === jsRes.output &&
+            zigRes.steps === jsRes.steps,
+        );
       }
     }
   });
