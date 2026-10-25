@@ -164,14 +164,18 @@ describe("Category 18 (Coupling / Drift-Freedom): single-source repository versi
     // ARE coupled to `package.json`, and that coupling is worth asserting here
     // because the estate's one-manifest policy depends on it.
     const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-    for (const lock of ["bun.lock", "pnpm-lock.yaml"]) {
-      const text = read(lock);
-      for (const [name, version] of Object.entries(deps)) {
-        expect(
-          text.includes(version),
-          `${lock} does not pin ${name}@${version} declared by package.json`,
-        ).toBe(true);
-      }
+    const bunPackages = Bun.JSONC.parse(read("bun.lock")).packages;
+    const pnpmImporter = Bun.YAML.parse(read("pnpm-lock.yaml")).importers["."];
+    const pnpmDeps = { ...pnpmImporter.dependencies, ...pnpmImporter.devDependencies };
+    for (const [name, version] of Object.entries(deps)) {
+      expect(
+        bunPackages[name]?.[0],
+        `bun.lock does not pin ${name}@${version} declared by package.json`,
+      ).toBe(`${name}@${version}`);
+      expect(
+        pnpmDeps[name]?.version,
+        `pnpm-lock.yaml does not pin ${name}@${version} declared by package.json`,
+      ).toBe(version);
     }
 
     // The hygiene report's `:repo-version:` names the release the REPORT describes
