@@ -1,7 +1,17 @@
 # SPDX-License-Identifier: MPL-2.0
 # SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# Toolchain declaration for befunge93-vault-cracker (bun, zig, idris2).
+# Toolchain declaration for befunge93-vault-cracker.
+# Declared below: bun, deno, pnpm, just, shellcheck, trivy, zig.
+#
+# NOT declared: idris2. The `%default total` ABI typecheck in `.github/workflows/ci.yml`
+# needs it, but it is deliberately absent here rather than pinned to something that
+# does not resolve -- the Ubuntu `apt` archive no longer ships it, and no mise backend
+# for it has been validated against this repository. CI provisions it out-of-band.
+# Both that provisioning and the `befunge93-vault-cracker.ipkg` module-path mismatch
+# are tracked as `v0.5.0` items in ROADMAP.adoc; do not "fix" this comment by adding
+# an `idris2 = "latest"` line that cannot actually install.
+#
 # Canon: hyperpolymath/standards 3-practice/provisioning/PROVISIONING-STANDARD.adoc
 # and 3-practice/LANGUAGE-POLICY.adoc §1.4 (Bun > Deno > pnpm from one package.json).
 # No banned tools (python, node, npm, yarn, go, java, make, nix) appear here.

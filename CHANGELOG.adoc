@@ -4,6 +4,33 @@
 
 All notable changes to `befunge93-vault-cracker` are documented in this file.
 
+== [0.4.2] - 2026-10-25
+
+Hygiene release: version-coupling drift closed and made unrepeatable by a gate.
+
+=== Fixed
+
+* `.machine_readable/descriptiles/provisioning_praxis.deed` — `:version` was stale at `0.2.0`. This is not cosmetic: `hp__deed version` in `build/just/provision-modes.sh` reads *this* descriptile (not `befunge93-vault-cracker_chora.deed`), so `./launcher.sh --version` reported `befunge93-vault-cracker-launcher 0.2.0` to users and to `just check-launcher` throughout the `0.4.0` and `0.4.1` releases. Two consecutive release cycles bumped four of the five coupled version fields and silently missed this one. Now `0.4.2`.
+* `launcher.sh` — the header artefact comment carried the same stale `:version "0.2.0"`. Now `0.4.2`.
+* `mise.toml` — the header advertised the toolchain as "(bun, zig, idris2)" while `[tools]` declared bun, deno, pnpm, just, shellcheck, trivy and zig, with no `idris2`. Corrected to list what is actually declared, with an explicit note on why `idris2` is *deliberately* absent rather than pinned to a spec that does not resolve (the Ubuntu `apt` archive no longer ships it and no mise backend has been validated here).
+* `tests/contracts/canonical-wrongness-r10.test.js` — hardcoded the version literal (`expect(pkg.version).toBe("0.4.1")`, `toContain(':version "0.4.1"')`), so every release had to edit this test and a missed edit read as a coupling failure rather than as the stale literal it was. Now derives from `package.json`.
+
+=== Added
+
+* `tests/contracts/version-coupling.test.js` — a Category 18 (Coupling / Drift-Freedom) gate asserting that all seven coupled version declarations agree with `package.json` as the single source of truth: `Justfile`, `befunge93-vault-cracker.ipkg`, `befunge93-vault-cracker_chora.deed`, `provisioning_praxis.deed`, `ROADMAP.adoc`, the newest `CHANGELOG.adoc` entry, and the `launcher.sh` artefact comment. It reports *every* drift at once rather than the first, treats an absent field as a failure (so a deletion cannot pass as agreement), and carries R10 in-memory negative mutants proving each extractor actually detects a mutated and a deleted version field. It also asserts that `bun.lock` and `pnpm-lock.yaml` pin the dependency versions `package.json` declares, and documents why `examples/web-project-bun.json` and the hygiene report's `:repo-version:` are intentionally *not* coupled.
+* `tests/contracts/version-coupling.test.js` — a `KNOWN DRIFT` test that deliberately pins `deno.lock`'s stale `vue@3.5.22` / `happy-dom@17.4.4`. This prevents the drift worsening unnoticed, and guarantees that whoever regenerates the lockfile sees the test fail and must consciously delete it rather than leave a stale assertion behind.
+
+=== Changed
+
+* Bumped `package.json`, `Justfile`, `befunge93-vault-cracker.ipkg`, `befunge93-vault-cracker_chora.deed`, `provisioning_praxis.deed`, `launcher.sh`, `CHANGELOG.adoc`, and `ROADMAP.adoc` to `version: 0.4.2`.
+* `tests/e2e/server-smoke.test.js` — the launcher lifecycle test asserted `--version` contained the literal `"befunge93-vault-cracker-launcher 0.2.0"`, which *enshrined* the descriptile drift as expected behaviour: the test passed precisely because the bug was present. Fixing the drift made this test fail, which is how it was found. Now derives the expected version from `package.json`.
+* Suite now *81 tests / 509,737 `expect()` assertions* across 9 files (from 74 / 509,687 across 8). Benchmark budgets are unchanged and remain *8/8* within p95 limits.
+
+=== Known Issues
+
+* **`deno.lock` is stale and cannot be regenerated from a sandbox without a Deno binary.** It pins `vue@3.5.22` and `happy-dom@17.4.4` while `package.json`, `bun.lock` and `pnpm-lock.yaml` all agree on `vue@3.5.44` and `happy-dom@21.0.4`. This is very likely the cause of the long-standing red `governance / JS runtimes — deno` and `Multi-Runtime Gate / deno` checks ("One manifest, deno"), which enforce exactly this one-manifest consistency. Hand-editing the v5 lockfile's integrity hashes was rejected as strictly worse than a visibly stale file: it would produce a lockfile that fails verification while looking fixed. Deno release assets redirect to `release-assets.githubusercontent.com`, outside the authoring sandbox's allowlist. Fix is `deno install` in an environment that has Deno, then delete the `KNOWN DRIFT` test.
+* The JS↔Zig differential VM divergence, the Idris2 provisioning source, and the `.ipkg` module-path mismatch recorded under `[0.4.1]` all remain open and are tracked as `v0.5.0` items. `Justfile`'s `check-k9` intentionally omits `--strict --layer L2`: running CI's exact strict invocation without a `nickel` binary exits `3` ("required checks were SKIPPED"), and `k9-validate.sh` documents that behaviour as deliberate — a missing toolchain must not read as a broken corpus. The strict gate runs in CI, where `nickel` is present.
+
 == [0.4.1] - 2026-10-24
 
 Defect-fix release. `v0.4.0` (PR #83) merged with a red test suite and a Custom Vault Workshop that could not author grids in the browser. Every item below was reproduced against `main` at `8cbb49d` before being fixed.

@@ -16,7 +16,7 @@
     :name "befunge93-vault-cracker"
     :owner "catachresis-colloquium"
     :repo "catachresis-colloquium/befunge93-vault-cracker"
-    :version "0.4.1"
+    :version "0.4.2"
     :license "MPL-2.0"
     :synopsis "Interactive 2D Befunge-93 torus puzzle and TEA state-machine game in Vue 3 and Bun")
 

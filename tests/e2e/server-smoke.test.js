@@ -2,7 +2,7 @@
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
 import { execFileSync } from "node:child_process";
-import { chmodSync, mkdtempSync, rmSync } from "node:fs";
+import { chmodSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
@@ -108,7 +108,14 @@ describe("HTTP Server Smoke, Security Headers & Launcher Lifecycle E2E (Categori
       expect(helpOut).toContain("--start");
 
       const verOut = execFileSync("./launcher.sh", ["--version"], { env, encoding: "utf8" });
-      expect(verOut).toContain("befunge93-vault-cracker-launcher 0.2.0");
+      // Derive the expected version from package.json rather than hardcoding a
+      // literal. This assertion previously pinned "0.2.0", which enshrined the
+      // provisioning_praxis.deed version drift (hp__deed reads that descriptile)
+      // as EXPECTED behaviour through two release cycles -- a test that passes
+      // while asserting the wrong thing is worse than no test, because it makes
+      // the drift look intentional. See tests/contracts/version-coupling.test.js.
+      const repoVersion = JSON.parse(readFileSync("package.json", "utf8")).version;
+      expect(verOut).toContain(`befunge93-vault-cracker-launcher ${repoVersion}`);
 
       const startOut = execFileSync("./launcher.sh", ["--start"], { env, encoding: "utf8" });
       expect(startOut).toContain("started");

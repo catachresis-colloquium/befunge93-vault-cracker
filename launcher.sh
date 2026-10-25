@@ -8,7 +8,7 @@
 #   :schema-version  "1.0.0"
 #   :canonical-name  "befunge93-vault-cracker-launcher"
 #   :beholding-chora #u5"estate/chora"
-#   (artefact :type "launcher" :version "0.2.0"
+#   (artefact :type "launcher" :version "0.4.2"
 #             :generator "launch-scaffolder")
 #   (app :name "befunge93-vault-cracker" :display "Befunge-93 Vault Cracker"
 #        :url "https://github.com/catachresis-colloquium/befunge93-vault-cracker"
