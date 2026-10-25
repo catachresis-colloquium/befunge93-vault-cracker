@@ -3,7 +3,7 @@
 = Befunge-93 Vault Cracker Roadmap
 :toc:
 
-== Current Status (`v0.4.1`)
+== Current Status (`v0.4.2`)
 
 * [x] Deterministic 10x10 2D torus Befunge-93 virtual machine (`src/engine/befunge93.js`)
 * [x] Pure functional TEA game reducer & boot invariant self-checks (`src/engine/game-state.js`)
@@ -18,11 +18,14 @@
 * [x] Full printable-ASCII (`0x20..0x7E`) playfield alphabet so all three shipped levels — incl. `g`/`p` self-modification and decorative data glyphs — are loadable and editable in the Workshop
 * [x] Observable Workshop mutation rejections (`workshop.lastError` + `role="alert"`) instead of silently discarded edits
 * [x] `sfc.compileAllComponents` benchmark covers all 9 shipped SFCs, and `workshop.validateCustomGrid` / `workshop.deriveTrace` benchmarks with p95 budgets
+* [x] Single-source repository version enforced by a gate (`tests/contracts/version-coupling.test.js`): all seven coupled declarations must agree with `package.json`, with R10 in-memory negative mutants proving the detector detects
+* [x] `provisioning_praxis.deed` `:version` drift closed — it had sat at `0.2.0` through two release cycles, making `./launcher.sh --version` report the wrong release
 
 == Next Milestones
 
 === `v0.5.0` — Future Work
 
+* [ ] **Regenerate `deno.lock` and delete the `KNOWN DRIFT` test.** `deno.lock` pins `vue@3.5.22` / `happy-dom@17.4.4` while `package.json`, `bun.lock` and `pnpm-lock.yaml` all agree on `vue@3.5.44` / `happy-dom@21.0.4`. This is very likely the cause of the long-standing red `governance / JS runtimes — deno` and `Multi-Runtime Gate / deno` checks ("One manifest, deno"). Run `deno install` in an environment that has Deno (release assets redirect to `release-assets.githubusercontent.com`, outside the authoring sandbox allowlist), then delete the `KNOWN DRIFT` test in `tests/contracts/version-coupling.test.js` and the matching CHANGELOG entry. Do **not** hand-edit the v5 integrity hashes: an unverifiable lockfile that looks fixed is worse than one that is visibly stale.
 * [ ] Run Stage A unary + RFC 9457 conformance trial against live Julia `MaridHTTPJSONExt.serve_json` (`MARID_UPSTREAM_URL=http://127.0.0.1:6274`)
 * [ ] 1000+ generative property tests across Bun/Deno/pnpm runtimes
 * [ ] Re-measure the `S9` ledger axes that need `pons-asinorum` and `zig build bench` (`codeLoc`, `nonLockLoc`, `files`, `deadExports`, `findingList`, `ponsAndArchFindings`, `zigBenchNsPerOp`) in CI, so `S8` -> `S9` is comparable on those axes

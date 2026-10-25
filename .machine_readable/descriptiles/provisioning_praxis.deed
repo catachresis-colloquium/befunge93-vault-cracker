@@ -11,7 +11,7 @@
   :id #u8"provisioning:catachresis-colloquium/befunge93-vault-cracker"
   :name "befunge93-vault-cracker"
   :repo "catachresis-colloquium/befunge93-vault-cracker"
-  :version "0.2.0"
+  :version "0.4.2"
   :archetype "app"
   :languages "bun zig"
   :build "bun run scripts/build.js"
