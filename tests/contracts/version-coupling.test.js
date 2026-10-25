@@ -148,6 +148,97 @@ describe("Category 18 (Coupling / Drift-Freedom): single-source repository versi
     expect(COUPLED.find((c) => c.path === "Justfile").extract(noVar)).toBeNull();
   });
 
+  for (const { path, extract } of COUPLED) {
+    test(`R10 deletion: ${path} cannot retain agreement after its declaration is removed`, () => {
+      const original = read(path);
+      const lines = original.split("\n");
+      const declarationIndex = lines.findIndex((line) => extract(line) === CANONICAL);
+      expect(declarationIndex).toBeGreaterThanOrEqual(0);
+
+      lines.splice(declarationIndex, 1);
+      const mutant = lines.join("\n");
+      expect(mutant).not.toBe(original);
+      expect(extract(mutant)).not.toBe(CANONICAL);
+
+      // A changelog retains older release headings; the other files have one
+      // repository-version declaration. Schema and compliance versions remain.
+      if (path !== "CHANGELOG.adoc") expect(extract(mutant)).toBeNull();
+    });
+
+    test(`${path} extracts a future release without truncating its version`, () => {
+      const original = read(path);
+      const declaration = original.split("\n").find((line) => extract(line) === CANONICAL);
+      expect(declaration).toBeDefined();
+
+      // Derive boundary mutants from the current release so these tests also
+      // survive a version bump. The first two retain it as a prefix.
+      const [major] = CANONICAL.split(".").map(Number);
+      for (const version of [`${CANONICAL}0`, `${CANONICAL}-rc.1`, `${major + 1}.0.0`]) {
+        const mutant = original.replace(declaration, declaration.replace(CANONICAL, version));
+        expect(mutant).not.toBe(original);
+        expect(extract(mutant)).toBe(version);
+        expect(extract(mutant)).not.toBe(CANONICAL);
+      }
+    });
+  }
+
+  test("the changelog checks the newest release even when an older entry agrees", () => {
+    const extract = COUPLED.find((c) => c.path === "CHANGELOG.adoc").extract;
+    const original = read("CHANGELOG.adoc");
+    const major = Number(CANONICAL.split(".")[0]);
+    const future = `${major + 1}.0.0`;
+    const heading = `== [${future}] - 2099-01-01\n\n`;
+    const mutant = original.replace(/^== \[/m, `${heading}== [`);
+
+    expect(mutant).not.toBe(original);
+    expect(mutant).toContain(`== [${CANONICAL}]`);
+    expect(extract(mutant)).toBe(future);
+  });
+
+  test("historical changelog versions do not cause current-release drift", () => {
+    const extract = COUPLED.find((c) => c.path === "CHANGELOG.adoc").extract;
+    const original = read("CHANGELOG.adoc");
+    const historical = [...original.matchAll(/^== \[([^\]]+)\]/gm)].slice(1);
+    expect(historical.length).toBeGreaterThan(0);
+
+    let mutant = original;
+    for (const [heading] of historical) mutant = mutant.replace(heading, "== [0.0.1-history]");
+    expect(mutant).not.toBe(original);
+    expect(extract(mutant)).toBe(CANONICAL);
+  });
+
+  test("changelog prose mentioning the current release is not a release heading", () => {
+    const extract = COUPLED.find((c) => c.path === "CHANGELOG.adoc").extract;
+    const original = read("CHANGELOG.adoc");
+    const mutant = original.replace(/^== \[[^\]]+\].*$/gm, "");
+
+    expect(mutant).not.toBe(original);
+    expect(extract(`${mutant}\nSee release [${CANONICAL}].\n`)).toBeNull();
+  });
+
+  test("schema and launcher-standard versions cannot substitute for a repository version", () => {
+    for (const path of [
+      "befunge93-vault-cracker_chora.deed",
+      ".machine_readable/descriptiles/provisioning_praxis.deed",
+      "launcher.sh",
+    ]) {
+      const extract = COUPLED.find((c) => c.path === path).extract;
+      const original = read(path);
+      const lines = original.split("\n");
+      const declarationIndex = lines.findIndex((line) => extract(line) === CANONICAL);
+      expect(declarationIndex).toBeGreaterThanOrEqual(0);
+
+      // Leave the version value in place under a different key: a broad search
+      // for a semver or the canonical string would still find it and pass.
+      lines[declarationIndex] = lines[declarationIndex].replace(":version", ":release");
+      const mutant = lines.join("\n");
+      expect(mutant).not.toBe(original);
+      expect(mutant).toContain(CANONICAL);
+      expect(mutant).toContain(":schema-version");
+      expect(extract(mutant)).toBeNull();
+    }
+  });
+
   test("the documented exclusions are excluded for a real reason, not to hide drift", () => {
     // examples/web-project-bun.json is an INDEPENDENT canonical example manifest
     // for a different package (`example-bun-vue-app`), used to exercise RFC 8785
