@@ -31,7 +31,7 @@ workflows:
         - 'actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9'
         - 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6'
     '.github/workflows/push-email-notify.yml':
-        - 'hyperpolymath/smtp-notify-action@c1c9fa07992a02c1fd3d67a0dc1b08cccb852aef'
+        - 'hyperpolymath/smtp-notify-action@e384daf6167a7a7567642d6a62060106244d2413'
     '.github/workflows/scorecard.yml':
         - 'hyperpolymath/standards@c6d78606f3928c22c3b0bdc6f5f5b47b96e05a5d'
     '.github/workflows/secret-scanner.yml':
@@ -123,9 +123,9 @@ dependencies:
         commit: 'sha1-abea47f85e598557f500fa1fd2ab7464fcb39406'
         owner_id: 1006268
         repo_id: 212984112
-    'hyperpolymath/smtp-notify-action@c1c9fa07992a02c1fd3d67a0dc1b08cccb852aef':
-        ref: 'v0.5.0'
-        commit: 'sha1-c1c9fa07992a02c1fd3d67a0dc1b08cccb852aef'
+    'hyperpolymath/smtp-notify-action@e384daf6167a7a7567642d6a62060106244d2413':
+        ref: 'v0.5.1'
+        commit: 'sha1-e384daf6167a7a7567642d6a62060106244d2413'
         owner_id: 6759885
         repo_id: 1352485172
     'hyperpolymath/standards@c6d78606f3928c22c3b0bdc6f5f5b47b96e05a5d':
