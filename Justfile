@@ -221,7 +221,7 @@ check-jcs:
     test -f bun.lock && test -f deno.lock && test -f pnpm-lock.yaml
     test ! -f package-lock.json && test ! -f yarn.lock
 
-# Bit 5: DEED v1.2.0 formal grammar, UUIDv5/v8 literals, and chora clauses
+# Bit 5: DEED v1.3.0 formal grammar, UUIDv5/v8 literals, and chora clauses
 [group('check-system')]
 check-deeds:
     bun scripts/deed_lint.js befunge93-vault-cracker_chora.deed .machine_readable/0-AI-MANIFEST.deed .machine_readable/descriptiles/provisioning_praxis.deed .machine_readable/descriptiles/befunge93-vault-cracker.launcher_praxis.deed

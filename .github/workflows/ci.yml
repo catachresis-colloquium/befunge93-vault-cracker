@@ -47,7 +47,7 @@ jobs:
       - name: Validate RFC 8785 JCS manifests
         run: bun scripts/jcs-canon.js --check package.json examples/web-project-bun.json contracts/marid-vault-trial.json benches/baseline.json
 
-      - name: Validate DEED v1.2.0 files
+      - name: Validate DEED v1.3.0 files
         run: >
           bun scripts/deed_lint.js
           befunge93-vault-cracker_chora.deed
