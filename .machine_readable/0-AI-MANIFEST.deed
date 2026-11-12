@@ -8,7 +8,7 @@
   :schema-version "1.0.0"
   :canonical-name "befunge93-vault-cracker-ai-manifest"
   :beholding-chora #u5"estate/chora"
-  :repo-uuid #u8"ai-manifest:catachresis-colloquium/befunge93-vault-cracker"
+  :repo-uuid #uuid"7c64d76d-3d73-845f-80f7-57eef5f75482"
   :updated "2026-10-23"
 
   (arrival
